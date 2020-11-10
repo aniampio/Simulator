@@ -1,0 +1,12 @@
+
+	{
+		"experiment_id": "Experiment on Packet Size",
+		"runs":       1,
+		"debug":	{"enabled": true, "mixnodes_verbose": true, "net_verbose": true},
+		"logging":  {"enabled": true, "dir": "logs/", "client_log": "client_log.json", "mix_log": "mix_log.json"},
+		"phases":   {"burnin": 50, "execution": 1000, "cooldown": 50},
+		"network":  {"packet_size": 0, "num_nodes": 10, "layers": 3, "layer_size": 3, "prov_in": 0, "prov_out": 0, "ack_packet_size": 5},
+		"mixnodes": {"avg_delay": 1.0, "perc_corrupt": 0.0, "AQM":false, "max_queue_size":1000},
+		"clients":  {"number":100, "min_msg_size": 50, "max_msg_size": 100, "rate_sending": 5.0, "rate_generating": 1.0, "rate_ack": 0.5, "rolling_mean_depth":10, "cover_traffic":true, "ACK":true, "retransmit":true, "dummies_acks":true, "max_retransmissions":5},
+		"misc":     {"id_len": 32, "num_target_packets": 10}
+	}
