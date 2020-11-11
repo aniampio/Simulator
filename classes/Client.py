@@ -20,8 +20,6 @@ class Client(Node):
         # to true when the system in a stady state
         self.start_logs = False
         #Monitoring
-        self.RTT_estimate = 5
-        self.rolling_mean_depth = self.conf["clients"]["rolling_mean_depth"]
         self.RTTs = np.array([])
         self.verbose = False
         self.num_received_packets = 0
@@ -51,31 +49,9 @@ class Client(Node):
                 self.send_packet(dummy_ack)
 
 
-    def update_RTT(self, packet):
-        '''Update estimated RTT time for packets based on incoming ACKS.
-        Uses rolling mean.'''
-        if packet.type=="ACK":
-            time_pkt_sent = self.pkt_buffer_out_not_ack[packet.id].time_sent
-            time_ack_received = packet.time_delivered
-            tmp_RTT =time_ack_received - time_pkt_sent
-            self.RTTs = np.append(self.RTTs,tmp_RTT)
-
-            #Rolling mean
-            c = 1.5
-            self.RTT_estimate = c * np.mean(self.RTTs[(len(self.RTTs)-self.rolling_mean_depth):])
-            #print(self.RTTs[(len(self.RTTs)-self.rolling_mean_depth):])
-            #print("RTT estimate: ", self.RTT_estimate)
-
 
     def schedule_retransmits(self):
-        while self.alive:
-            yield self.env.timeout(1) # this time influences the retransmission. We have to pick a value which allows as to wait for the acks long enough.
-            #threshold = self.estimate_RTT() #Estimate the RTT with the current network conditions (is it correct? Some pkts may've been sent earlier...)
-            stale_pkts = self.pop_stale_non_acked(self.RTT_estimate) #Grab all packets that need to be retransmitte
-            retransmit_pkts = [pkt for pkt in stale_pkts if (pkt.times_transmitted < self.max_retransmissions)] #Remove pkts that have exceeded the retransmission limit.
-            if len(stale_pkts) != len(retransmit_pkts):
-                print("Retransmission limit reached: Client %s dropped %d packets. Number left %d" %(self.id, len(stale_pkts)-len(retransmit_pkts), len(retransmit_pkts)))
-            self.add_to_buffer(retransmit_pkts)
+        pass
 
 
     def schedule_message(self, message):
@@ -141,18 +117,6 @@ class Client(Node):
         ''' Method prints all the messages gathered in the buffer of incoming messages.'''
         for msg in self.msg_buffer_in:
             msg.output()
-
-    def pop_stale_non_acked(self, expected_RTT):
-        now = self.env.now
-        stale_pkts = []
-        tmp_dict = self.pkt_buffer_out_not_ack.copy()
-        for id in tmp_dict:
-            tmp_pkt = copy.copy(self.pkt_buffer_out_not_ack[id])
-            if (expected_RTT < (now-tmp_pkt.time_sent)):
-                stale_pkts.append(tmp_pkt)
-                self.pkt_buffer_out_not_ack.pop(tmp_pkt.id, None)
-        #print("ACK was not received for %d packets." %len(stale_pkts))
-        return stale_pkts
 
     def __repr__(self):
         return self.id

@@ -38,7 +38,7 @@ class Packet():
         # Measurements
         self.sender_estimates = numpy.array([0.0, 0.0, 0.0]) #Other, A, B
         self.sender_estimates[self.real_sender.label] = 1.0
-        self.probability_mass = numpy.zeros(100)
+        self.probability_mass = numpy.zeros(self.conf["misc"]["num_target_packets"])
 
         if self.type=="REAL":
             self.message.reconstruct.add(self.id)
@@ -58,7 +58,7 @@ class Packet():
     def ack(cls, conf, net, dest, sender, packet_id, msg_id):
         '''  The class method used for creating an ack Packet. '''
 
-        payload = random_string(conf["network"]["packet_size"])
+        payload = random_string(conf["packet"]["packet_size"])
         rand_route = net.select_random_route(length=3)
         rand_route = rand_route + [dest]
         return cls(conf=conf, route=rand_route, payload=payload, sender=sender, dest=dest, packet_id=packet_id, msg_id=msg_id, type="ACK")
@@ -67,7 +67,7 @@ class Packet():
     def dummy(cls, conf, net, dest, sender):
         '''  The class method used for creating a dummy Packet. '''
 
-        payload = random_string(conf["network"]["packet_size"])
+        payload = random_string(conf["packet"]["packet_size"])
         rand_route = net.select_random_route(length=3)
         rand_route = rand_route + [dest]
         return cls(conf=conf, route=rand_route, payload=payload, sender=sender, dest=dest, type="DUMMY", msg_id="-")
@@ -75,7 +75,7 @@ class Packet():
     @classmethod
     def dummy_ack(cls, conf, net, dest, sender):
 
-        payload = random_string(conf["network"]["ack_packet_size"])
+        payload = random_string(conf["packet"]["ack_packet_size"])
         rand_route = net.select_random_route(length=3)
         rand_route = rand_route + [dest]
         return cls(conf=conf, route=rand_route, payload=payload, sender=sender, dest=dest, type="DUMMY_ACK", msg_id="DUMMY_ACK")

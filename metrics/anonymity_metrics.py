@@ -2,8 +2,8 @@ import math
 import numpy as np
 from scipy import stats
 
-def getEntropy(data):
-	columnsNames = ['Entropy'+str(x) for x in range(100)]
+def getEntropy(data, num_target_packets):
+	columnsNames = ['Entropy'+str(x) for x in range(num_target_packets)]
 	entropies = []
 	for column in columnsNames:
 		dist = data.iloc[0][column]

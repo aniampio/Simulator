@@ -17,20 +17,21 @@ class Network(object):
         self.type = type
         self.loggers = loggers
 
-        num_mixnodes = int(self.conf["network"]["layers"]) * int(self.conf["network"]["layer_size"])
         self.clients = [Client(env, conf, self, loggers = loggers, label=0) for i in range(int(conf["clients"]["number"]))]
 
         if type == "p2p":
-            self.peers = [Node(env, conf, self, id="M%s" % i, loggers = loggers) for i in range(int(conf["clients"]["number"]))]
+            self.peers = [Node(env, conf, self, id="Peer%s" % i, loggers = loggers) for i in range(int(conf["clients"]["number"]))]
             self.topology["Type"] = "p2p"
             self.init_p2p()
         else:
-            self.mixnodes = [Node(env, conf, self, id="M%s" % i, loggers = loggers) for i in range(num_mixnodes)]
             if type == "cascade":
                 self.topology["Type"] = "cascade"
+                self.mixnodes = [Node(env, conf, self, id="M%s" % i, loggers = loggers) for i in range(self.conf["network"]["num_nodes"])]
                 self.init_cascade()
             elif type == "stratified":
                 self.topology["Type"] = "stratified"
+                num_mixnodes = int(self.conf["network"]["layers"]) * int(self.conf["network"]["layer_size"])
+                self.mixnodes = [Node(env, conf, self, id="M%s" % i, loggers = loggers) for i in range(num_mixnodes)]
                 self.init_stratified()
             elif type == "multi_cascade":
                 pass

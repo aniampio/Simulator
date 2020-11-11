@@ -35,6 +35,8 @@ class Node(object):
 
         self.rate_sending = 1.0/float(self.conf["clients"]["rate_sending"])
         self.rate_generating = float(self.conf["clients"]["sim_add_buffer"]) # this specifies how often we put a real message into a buffer
+        self.cover_traffic = self.conf["clients"]["cover_traffic"]
+        self.cover_traffic_rate = 1.0/float(self.conf["clients"]["cover_traffic_rate"])
 
         self.verbose = False
         self.pkt_buffer_out = []
@@ -54,7 +56,6 @@ class Node(object):
         '''
 
         delays = []
-
         while True:
             if self.alive:
                 if delays == []:
@@ -66,16 +67,12 @@ class Node(object):
                 pkt_sent = False
                 while len(self.pkt_buffer_out) > 0: #If there is a packet to be send
                     tmp_pkt = self.pkt_buffer_out.pop(0)
-                    if not tmp_pkt.ACK_Received: #Check if it got ACK_Received in the meanwhile
-                        self.send_packet(tmp_pkt)
-                        self.env.total_messages_sent += 1
-                        pkt_sent = True
-                        break
-                    else:
-                        print("ACK_Received while waiting in the queue.")
+                    self.send_packet(tmp_pkt)
+                    self.env.total_messages_sent += 1
+                    pkt_sent = True
 
                 # Send dummy packet when the packet buffer is empty,(currently we don't send dummies during the cooldown phase)
-                if pkt_sent == False and self.conf["clients"]["cover_traffic"]:
+                if pkt_sent == False:
                     tmp_pkt = Packet.dummy(conf=self.conf, net=self.net, dest=dest, sender=self)  # sender_estimates[sender.label] = 1.0
                     tmp_pkt.time_queued = self.env.now
                     self.send_packet(tmp_pkt)
@@ -83,6 +80,27 @@ class Node(object):
             else:
                 break
 
+    def start_loop_cover_traffc(self):
+
+        if self.cover_traffic:
+            if self.verbose:
+                print(">> %s: Loop cover traffic is on" % self.id)
+
+            delays = []
+            while True:
+                if self.alive:
+                    if delays == []:
+                        delays = list(np.random.exponential(self.cover_traffic_rate, 10000))
+                    delay = delays.pop()
+                    yield self.env.timeout(float(delay))
+                    cover_loop_packet = Packet.dummy(conf=self.conf, net = self.net, dest=self, sender=self)
+                    cover_loop_packet.time_queued = self.env.now
+                    self.send_packet(cover_loop_packet)
+                    self.env.total_messages_sent += 1
+                else:
+                    break
+        else:
+            print(">> %s : Loop cover traffic is off" % self.id)
 
     def send_packet(self, packet):
         ''' Methods sends a packet into the network,

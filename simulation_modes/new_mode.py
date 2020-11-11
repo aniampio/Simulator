@@ -2,6 +2,7 @@ import simpy
 import os
 import datetime
 import numpy as np
+from collections import namedtuple
 
 
 import experiments.Settings
@@ -14,7 +15,8 @@ from classes.Utilities import *
 
 throughput = 0.0
 
-def get_loggers(log_dir):
+def get_loggers(log_dir, conf):
+
     packet_logger = setup_logger('simulation.packet', os.path.join(log_dir, 'packet_log.csv'))
     packet_logger.info(StructuredMessage(metadata=("Type", "CurrentTime", "ClientID", "PacketID", "PacketType", "MessageID", "PacketTimeQueued", "PacketTimeSent", "PacketTimeDelivered", "TotalFragments", "PrOthers", "PrSenderA", "PrSenderB", "RealSenderLabel", "Route", "PoolSizes")))
 
@@ -22,23 +24,25 @@ def get_loggers(log_dir):
     message_logger.info(StructuredMessage(metadata=("Type", "CurrentTime", "ClientID", "MessageID", "NumPackets", "MsgTimeQueued", "MsgTimeSent", "MsgTimeDelivered", "MsgTransitTime", "MsgSize", "MsgRealSender")))
 
     entropy_logger = setup_logger('simulation.mix', os.path.join(log_dir, 'last_mix_entropy.csv'))
-    entropy_logger.info(StructuredMessage(metadata=tuple(['Entropy'+str(x) for x in range(100)])))
+    entropy_logger.info(StructuredMessage(metadata=tuple(['Entropy'+str(x) for x in range(int(conf["misc"]["num_target_packets"]))])))
 
     return (packet_logger, message_logger, entropy_logger)
 
 
-def setup_env():
+def setup_env(conf):
     env = simpy.Environment()
     env.stop_sim_event = env.event()
     env.message_ctr = 0
     env.total_messages_sent = 0
     env.total_messages_received = 0
     env.finished = False
-    env.entropy = numpy.zeros(100)
+    env.entropy = numpy.zeros(int(conf["misc"]["num_target_packets"]))
 
     return env
 
-def run_p2p(env, conf, net, loggers, mix_logger):
+
+
+def run_p2p(env, conf, net, loggers):
     print("Runninf P2P topology")
     peers = net.peers
     print("Number of active peers: ", len(peers))
@@ -55,11 +59,15 @@ def run_p2p(env, conf, net, loggers, mix_logger):
 
     for c in peers:
         env.process(c.start(random.choice(peers)))
+        env.process(c.start_loop_cover_traffc())
 
     env.process(SenderT1.start(dest=recipient))
+    env.process(SenderT1.start_loop_cover_traffc())
     env.process(SenderT2.start(dest=random.choice(peers)))
+    env.process(SenderT2.start_loop_cover_traffc())
     env.process(recipient.set_start_logs())
     env.process(recipient.start(dest=random.choice(peers)))
+    env.process(recipient.start_loop_cover_traffc())
 
     print("---------" + str(datetime.datetime.now()) + "---------")
     print("> Running the system for %s ticks to prepare it for measurment." % (conf["phases"]["burnin"]))
@@ -91,16 +99,11 @@ def run_p2p(env, conf, net, loggers, mix_logger):
     print("> Cooldown phase finished.")
     time_finished = env.now
     time_finished_unix = datetime.datetime.now()
-    # print("Reciever received: ", recipient.num_received_packets)
+
     print("> Total Simulation Time [in ticks]: " + str(time_finished-time_started) + "---------")
     print("> Total Simulation Time [in unix time]: " + str(time_finished_unix-time_started_unix) + "---------")
 
-    for l in loggers:
-        for h in l.handlers:
-            h.flush()
-    for h in mix_logger.handlers:
-        h.flush()
-
+    flush_logs(loggers)
 
     global throughput
     throughput = float(env.total_messages_received) / float(time_finished-time_started)
@@ -114,27 +117,36 @@ def run_p2p(env, conf, net, loggers, mix_logger):
 
 
 
-def run_client_server(env, conf, net, loggers, mix_logger):
+def run_client_server(env, conf, net, loggers):
     clients = net.clients
     print("Number of active clients: ", len(clients))
 
     SenderT1 = clients.pop()
     SenderT1.label = 1
     SenderT1.verbose = True
+    print("Target Sender1: ", SenderT1.id)
 
     SenderT2 = clients.pop()
     SenderT2.label = 2
     SenderT2.verbose = True
+    print("Target Sender2: ", SenderT2.id)
 
     recipient = clients.pop()
+    recipient.verbose = True
+    print("Target Recipient: ", recipient.id)
 
     for c in clients:
+        c.verbose = True
         env.process(c.start(random.choice(clients)))
+        env.process(c.start_loop_cover_traffc())
 
     env.process(SenderT1.start(dest=recipient))
+    env.process(SenderT1.start_loop_cover_traffc())
     env.process(SenderT2.start(dest=random.choice(clients)))
+    env.process(SenderT2.start_loop_cover_traffc())
     env.process(recipient.set_start_logs())
     env.process(recipient.start(dest=random.choice(clients)))
+    env.process(recipient.start_loop_cover_traffc())
 
     print("---------" + str(datetime.datetime.now()) + "---------")
     print("> Running the system for %s ticks to prepare it for measurment." % (conf["phases"]["burnin"]))
@@ -170,11 +182,7 @@ def run_client_server(env, conf, net, loggers, mix_logger):
     print("> Total Simulation Time [in ticks]: " + str(time_finished-time_started) + "---------")
     print("> Total Simulation Time [in unix time]: " + str(time_finished_unix-time_started_unix) + "---------")
 
-    for l in loggers:
-        for h in l.handlers:
-            h.flush()
-    for h in mix_logger.handlers:
-        h.flush()
+    flush_logs(loggers)
 
 
     global throughput
@@ -186,6 +194,12 @@ def run_client_server(env, conf, net, loggers, mix_logger):
 
     print("Network throughput %f / second: " % throughput)
     print("Average mix throughput %f / second, with std: %f" % (np.mean(mixthroughputs), np.std(mixthroughputs)))
+
+
+def flush_logs(loggers):
+    for l in loggers:
+        for h in l.handlers:
+            h.flush()
 
 
 def run(exp_dir, conf_file=None, conf_dic=None):
@@ -206,16 +220,15 @@ def run(exp_dir, conf_file=None, conf_dic=None):
 
     # Logging directory
     log_dir = os.path.join(exp_dir,conf["logging"]["dir"])
-    mix_logger = setup_logger('simulation.mix', os.path.join(log_dir, 'mix_logger.csv'))
     # Setup environment
-    env = setup_env()
+    env = setup_env(conf)
 
     # Create the network
-    type = "cascade"
-    loggers = get_loggers(log_dir)
+    type = conf["network"]["topology"]
+    loggers = get_loggers(log_dir, conf)
     net = Network(env, type, conf, loggers)
 
     if type == "p2p":
-        run_p2p(env, conf, net, loggers, mix_logger)
+        run_p2p(env, conf, net, loggers)
     else:
-        run_client_server(env, conf, net, loggers, mix_logger)
+        run_client_server(env, conf, net, loggers)

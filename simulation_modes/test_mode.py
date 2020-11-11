@@ -23,6 +23,7 @@ def progress_update(env, interval=5):
 def build_network(env, layers, mixnodes_per_layer, num_in, num_out):
     return Network(env, layers, mixnodes_per_layer, num_in, num_out)
 
+
 def get_loggers(log_dir):
     packet_logger = setup_logger('simulation.packet', os.path.join(log_dir, 'packet_log.csv'))
     packet_logger.info(StructuredMessage(metadata=("Type", "CurrentTime", "ClientID", "PacketID", "PacketType", "MessageID", "PacketTimeQueued", "PacketTimeSent", "PacketTimeDelivered", "TotalFragments", "PrOthers", "PrSenderA", "PrSenderB", "RealSenderLabel", "Route", "PoolSizes")))
