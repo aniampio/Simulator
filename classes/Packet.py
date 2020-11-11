@@ -6,16 +6,17 @@ class Packet():
         transporting message blocks among clients.
     '''
 
-    __slots__ = ['conf', 'id', 'route', 'payload', 'real_sender', 'msg_id', 'message', 'fragments', 'type', 'pool_logs', 'dropped', 'current_node', 'times_transmitted',
+    __slots__ = ['conf', 'id', 'route', 'payload', 'real_sender', 'dest', 'msg_id', 'message', 'fragments', 'type', 'pool_logs', 'dropped', 'current_node', 'times_transmitted',
                 'ACK_Received', 'time_queued', 'time_sent', 'time_delivered', 'sender_estimates', 'probability_mass']
 
-    def __init__(self, conf, route, payload, sender, type, packet_id = None, msg_id="DUMMY", order=1, num=1, message=None):
+    def __init__(self, conf, route, payload, sender, dest, type, packet_id = None, msg_id="DUMMY", order=1, num=1, message=None):
         self.conf = conf
         self.id = packet_id or random_string(32)
 
         self.route = route
         self.payload = payload
         self.real_sender = sender
+        self.dest = dest
 
         self.msg_id = msg_id
         self.message = message
@@ -50,7 +51,7 @@ class Packet():
 
         rand_route = net.select_random_route(length=3)
         rand_route = rand_route + [dest]
-        return cls(conf=conf, route=rand_route, payload=payload, sender=sender, type=type, num=num, msg_id=msg_id)
+        return cls(conf=conf, route=rand_route, payload=payload, sender=sender, dest=dest, type=type, num=num, msg_id=msg_id)
 
 
     @classmethod
@@ -60,7 +61,7 @@ class Packet():
         payload = random_string(conf["network"]["packet_size"])
         rand_route = net.select_random_route(length=3)
         rand_route = rand_route + [dest]
-        return cls(conf=conf, route=rand_route, payload=payload, sender=sender, packet_id=packet_id, msg_id=msg_id, type="ACK")
+        return cls(conf=conf, route=rand_route, payload=payload, sender=sender, dest=dest, packet_id=packet_id, msg_id=msg_id, type="ACK")
 
     @classmethod
     def dummy(cls, conf, net, dest, sender):
@@ -69,7 +70,7 @@ class Packet():
         payload = random_string(conf["network"]["packet_size"])
         rand_route = net.select_random_route(length=3)
         rand_route = rand_route + [dest]
-        return cls(conf=conf, route=rand_route, payload=payload, sender=sender, type="DUMMY", msg_id="-")
+        return cls(conf=conf, route=rand_route, payload=payload, sender=sender, dest=dest, type="DUMMY", msg_id="-")
 
     @classmethod
     def dummy_ack(cls, conf, net, dest, sender):
@@ -77,7 +78,7 @@ class Packet():
         payload = random_string(conf["network"]["ack_packet_size"])
         rand_route = net.select_random_route(length=3)
         rand_route = rand_route + [dest]
-        return cls(conf=conf, route=rand_route, payload=payload, sender=sender, type="DUMMY_ACK", msg_id="DUMMY_ACK")
+        return cls(conf=conf, route=rand_route, payload=payload, sender=sender, dest=dest, type="DUMMY_ACK", msg_id="DUMMY_ACK")
 
 
     def output(self):

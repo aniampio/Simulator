@@ -62,7 +62,7 @@ class Message():
         for i, f in enumerate(fragments):
             rand_route = net.select_random_route(length=3)
             rand_route = rand_route + [dest]
-            tmp_pkt = Packet(conf=self.conf, route=rand_route, payload=f, sender=self.real_sender, msg_id=self.id, type="REAL", order=i+1, num=num_fragments, message=self)
+            tmp_pkt = Packet(conf=self.conf, route=rand_route, payload=f, sender=self.real_sender, dest=dest, msg_id=self.id, type="REAL", order=i+1, num=num_fragments, message=self)
             pkts.append(tmp_pkt)
             self.reconstruct.add(tmp_pkt.id)
 

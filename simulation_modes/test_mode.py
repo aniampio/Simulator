@@ -30,8 +30,10 @@ def get_loggers(log_dir):
     message_logger = setup_logger('simulation.messages', os.path.join(log_dir, 'message_log.csv'))
     message_logger.info(StructuredMessage(metadata=("Type", "CurrentTime", "ClientID", "MessageID", "NumPackets", "MsgTimeQueued", "MsgTimeSent", "MsgTimeDelivered", "MsgTransitTime", "MsgSize", "MsgRealSender")))
 
-    loggers = (packet_logger, message_logger)
-    return loggers
+    entropy_logger = setup_logger('simulation.mix', os.path.join(log_dir, 'last_mix_entropy.csv'))
+    entropy_logger.info(StructuredMessage(metadata=tuple(['Entropy'+str(x) for x in range(100)])))
+
+    return (packet_logger, message_logger, entropy_logger)
 
 
 
@@ -53,8 +55,6 @@ def run(exp_dir, conf_file=None, conf_dic=None):
     verbose=conf["debug"]["mixnodes_verbose"]
 
     loggers = get_loggers(log_dir)
-    entropy_logger = setup_logger('simulation.mix', os.path.join(log_dir, 'last_mix_entropy.csv'))
-    entropy_logger.info(StructuredMessage(metadata=tuple(['Entropy'+str(x) for x in range(100)])))
     mix_logger = setup_logger('simulation.mix', os.path.join(log_dir, 'mix_logger.csv'))
 
 
@@ -68,23 +68,21 @@ def run(exp_dir, conf_file=None, conf_dic=None):
 
     # ------- creating mix network -------------
     type = "stratified"
-    net = Network(env, type, conf)
-    for m in net.mixnodes:
-        m.logger = mix_logger
-    # net.MixNodes[0].verbose = True
+    net = Network(env, type, conf, loggers)
 
     # -------- timing for how long to run the simulation ----------
     limittime = conf["phases"]["burnin"] + conf["phases"]["execution"] # time after which we should terminate the target senders from sending
     simtime = conf["phases"]["burnin"] +  conf["phases"]["execution"] + conf["phases"]["cooldown"] # time after which the whole simulator stops
 
     # Creating so called "other" users, who will only send dummy traffic
-    otherClients = []
-    print("> Number of clients started: ", conf["clients"]["number"])
-    for s in range(conf["clients"]["number"] - 3):
-        sender = Client(env, conf, net, loggers = loggers, label=0)
-        otherClients.append(sender)
+    otherClients = net.clients
+    print("> Number of clients started: ", len(net.clients))
+    # for s in range(conf["clients"]["number"] - 3):
+    #     sender = Client(env, conf, net, loggers = loggers, label=0)
+    #     otherClients.append(sender)
 
-    for o in otherClients:
+    sender = otherClients[0]
+    for c in otherClients:
         env.process(sender.start(random.choice(otherClients)))
         # env.process(Sender.start_ack_sending())
         # env.process(sender.terminate(limittime))
@@ -148,7 +146,7 @@ def run(exp_dir, conf_file=None, conf_dic=None):
     print("> Main part of simulation finished. Starting cooldown phase.")
 
     # Log entropy
-    entropy_logger.info(StructuredMessage(metadata=tuple(env.entropy)))
+    net.loggers[2].info(StructuredMessage(metadata=tuple(env.entropy)))
 
     # ------ RUNNING THE COOLDOWN PHASE ----------
     if conf["phases"]["burnin"] > 0.0:
