@@ -60,16 +60,16 @@ class Network(object):
             for j in range(0, mixes_per_layer):
                 self.topology[self.mixnodes[i * mixes_per_layer + j]] = layers[i + 1]
 
-    def select_random_route(self, length=None):
+    def select_random_route(self):
         tmp_route = []
 
         if self.topology["Type"] == "stratified":
             tmp_route = [random.choice(L) for L in self.topology["Layers"]]
-            print("Selected path: ", tmp_route)
         elif self.topology["Type"] == "cascade":
             tmp_route = self.topology["cascade"].copy()
         elif self.topology["Type"] == "p2p":
-            tmp_route = random.sample(self.peers, 3)
+            length = self.config["network"]["p2p"]["path_length"]
+            tmp_route = random.sample(self.peers, length)
 
         return tmp_route
 

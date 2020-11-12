@@ -26,7 +26,6 @@ class Node(object):
         self.probability_mass = None
         self.sender_estimates = None
         self.pool = {}
-        self.max_pool_size = 0
         self.mixlogging = False
 
         self.loggers = loggers if loggers else None
@@ -188,7 +187,7 @@ class Node(object):
 
                 # this part is used to stop the simulator at a time when all sent packets got delivered!
                 if self.env.finished == True and self.env.message_ctr <= 0:
-                  print('> The stop simulation condition happend')
+                  print('> The stop simulation condition happend.')
                   self.env.stop_sim_event.succeed()
 
         elif packet.type == "DUMMY":
@@ -217,7 +216,6 @@ class Node(object):
         if len(self.pool) == 0:
             self.sender_estimates = None
             self.probability_mass = None
-            self.max_pool_size = 0
         self.pkts_sent += 1
 
         # If this is the last mixnode, update the entropy taking into account probabilities

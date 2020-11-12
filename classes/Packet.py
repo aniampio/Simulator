@@ -49,7 +49,7 @@ class Packet():
         '''Method used for constructing a new Packet where
         the content is defined by the client but the route is generated on the constructor.'''
 
-        rand_route = net.select_random_route(length=3)
+        rand_route = net.select_random_route()
         rand_route = rand_route + [dest]
         return cls(conf=conf, route=rand_route, payload=payload, sender=sender, dest=dest, type=type, num=num, msg_id=msg_id)
 
@@ -59,7 +59,7 @@ class Packet():
         '''  The class method used for creating an ack Packet. '''
 
         payload = random_string(conf["packet"]["packet_size"])
-        rand_route = net.select_random_route(length=3)
+        rand_route = net.select_random_route()
         rand_route = rand_route + [dest]
         return cls(conf=conf, route=rand_route, payload=payload, sender=sender, dest=dest, packet_id=packet_id, msg_id=msg_id, type="ACK")
 
@@ -68,7 +68,7 @@ class Packet():
         '''  The class method used for creating a dummy Packet. '''
 
         payload = random_string(conf["packet"]["packet_size"])
-        rand_route = net.select_random_route(length=3)
+        rand_route = net.select_random_route()
         rand_route = rand_route + [dest]
         return cls(conf=conf, route=rand_route, payload=payload, sender=sender, dest=dest, type="DUMMY", msg_id="-")
 
@@ -76,7 +76,7 @@ class Packet():
     def dummy_ack(cls, conf, net, dest, sender):
 
         payload = random_string(conf["packet"]["ack_packet_size"])
-        rand_route = net.select_random_route(length=3)
+        rand_route = net.select_random_route()
         rand_route = rand_route + [dest]
         return cls(conf=conf, route=rand_route, payload=payload, sender=sender, dest=dest, type="DUMMY_ACK", msg_id="DUMMY_ACK")
 

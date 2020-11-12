@@ -60,7 +60,7 @@ class Message():
             fragments = [self.payload[i:i + int(self.conf["packet"]["packet_size"])] for i in range(0, len(self.payload), int(self.conf["packet"]["packet_size"]))]
 
         for i, f in enumerate(fragments):
-            rand_route = net.select_random_route(length=3)
+            rand_route = net.select_random_route()
             rand_route = rand_route + [dest]
             tmp_pkt = Packet(conf=self.conf, route=rand_route, payload=f, sender=self.real_sender, dest=dest, msg_id=self.id, type="REAL", order=i+1, num=num_fragments, message=self)
             pkts.append(tmp_pkt)
