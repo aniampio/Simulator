@@ -22,15 +22,6 @@ class MixNode(Node):
             self.avg_delay = float(self.conf["mixnodes"]["avg_delay"])
 
 
-    def set_network(self, topology):
-        ''' Function sets a given network topology.
-
-            Keyword arguments:
-            topology - a topology of the network.
-        '''
-        self.topology = topology
-
-
     def drop_random(self):
         '''Drops a packet from the pool at random, and returns it.'''
 

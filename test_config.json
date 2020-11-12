@@ -9,11 +9,11 @@
     "phases":   {
         "burnin": 100,
         "execution": 100,
-        "cooldown": 100},
+        "cooldown": 1000},
     "network": {
-        "topology": "p2p",
+        "topology": "stratified",
         "layers": 3,
-        "layer_size": 2,
+        "layer_size": 10,
         "num_nodes": 3,
         "num_gateways": 0},
     "packet": {
@@ -25,12 +25,11 @@
 			"avg_delay": 1.0,
 			"AQM":false},
     "clients": {
-        "number":100000,
-        "sim_add_buffer": 0.5,
+        "number":100,
+        "sim_add_buffer": 1.0,
         "rate_sending": 1.0,
-        "rate_generating": 2.0,
         "rate_ack": 0.5,
-        "cover_traffic":true,
+        "cover_traffic":false,
         "cover_traffic_rate":0.5,
         "ACK":false,
         "retransmit":false,
@@ -38,5 +37,5 @@
         "max_retransmissions":5},
     "misc": {
         "id_len": 32,
-        "num_target_packets": 100}
+        "num_target_packets": 10}
 }

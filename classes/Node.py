@@ -83,16 +83,15 @@ class Node(object):
     def start_loop_cover_traffc(self):
 
         if self.cover_traffic:
-            if self.verbose:
-                print(">> %s: Loop cover traffic is on" % self.id)
-
             delays = []
             while True:
                 if self.alive:
                     if delays == []:
                         delays = list(np.random.exponential(self.cover_traffic_rate, 10000))
+
                     delay = delays.pop()
                     yield self.env.timeout(float(delay))
+
                     cover_loop_packet = Packet.dummy(conf=self.conf, net = self.net, dest=self, sender=self)
                     cover_loop_packet.time_queued = self.env.now
                     self.send_packet(cover_loop_packet)
@@ -100,7 +99,7 @@ class Node(object):
                 else:
                     break
         else:
-            print(">> %s : Loop cover traffic is off" % self.id)
+            pass
 
     def send_packet(self, packet):
         ''' Methods sends a packet into the network,
@@ -115,10 +114,8 @@ class Node(object):
         packet.current_node = -1  # If it's a retransmission this needs to be reset
         packet.times_transmitted += 1
 
-        if packet.type == "REAL" or packet.type == "DUMMY":
-            self.pkt_buffer_out_not_ack[packet.id] = packet #Add to ack waiting list
-            if packet.type == "REAL" and packet.message.time_sent is None:
-                packet.message.time_sent = packet.time_sent
+        if packet.type == "REAL" and packet.message.time_sent is None:
+            packet.message.time_sent = packet.time_sent
 
         self.env.process(self.net.forward_packet(packet))
 
@@ -161,21 +158,16 @@ class Node(object):
         self.env.total_messages_received += 1
 
         if packet.type == "REAL":
-            # print("> Real message")
-            if self.send_ACK:
-                ack_pkt = Packet.ack(conf=self.conf, net=self.net, dest=packet.real_sender, sender=self, packet_id=packet.id, msg_id=packet.msg_id)
-                self.add_to_ack_buffer(ack_pkt)
-
             self.num_received_packets += 1
             msg = packet.message
+
             if not msg.complete_receiving:
-                # print("> Message not complete, but packet added")
                 msg.register_received_pkt(packet)
                 self.msg_buffer_in[msg.id] = msg
                 if self.conf["logging"]["enabled"] and self.packet_logger is not None and self.start_logs:
                     self.packet_logger.info(StructuredMessage(metadata=("RCV_PKT_REAL", self.env.now, self.id, packet.id, packet.type, packet.msg_id, packet.time_queued, packet.time_sent, packet.time_delivered, packet.fragments, packet.sender_estimates[0], packet.sender_estimates[1], packet.sender_estimates[2], packet.real_sender.label, packet.route, packet.pool_logs)))
+
             if msg.complete_receiving:
-                # print("> Message completed")
                 msg_transit_time = (msg.time_delivered - msg.time_sent)
                 if self.conf["logging"]["enabled"] and self.message_logger is not None and self.start_logs:
                     self.message_logger.info(StructuredMessage(metadata=("RCV_MSG", self.env.now, self.id, msg.id, len(msg.pkts), msg.time_queued, msg.time_sent, msg.time_delivered, msg_transit_time, len(msg.payload), msg.real_sender.label)))
@@ -186,21 +178,12 @@ class Node(object):
                   print('> The stop simulation condition happend')
                   self.env.stop_sim_event.succeed()
 
-        elif packet.type == "ACK": #remove packet from ack waiting list
-            try:
-                if self.conf["logging"]["enabled"] and self.packet_logger is not None and self.start_logs:
-                    self.packet_logger.info(StructuredMessage(metadata=("RCV_PKT_ACK", self.env.now, self.id, packet.id, packet.type, packet.msg_id, packet.time_sent, packet.time_delivered, packet.fragments, packet.sender_estimates[0], packet.sender_estimates[1], packet.sender_estimates[2], packet.real_sender.label, packet.route, packet.pool_logs)))
-                self.update_RTT(packet)
-                self.pkt_buffer_out_not_ack[packet.id].ACK_Received = True
-                del self.pkt_buffer_out_not_ack[packet.id]
-            except Exception as e:
-                pass
         elif packet.type == "DUMMY":
             if self.send_dummy_ACK:
                 ack_pkt = Packet.ack(conf=self.conf, net=self.net, dest=packet.real_sender, sender=self, packet_id=packet.id, msg_id=packet.msg_id)
                 self.add_to_ack_buffer(ack_pkt)
-        elif packet.type == "DUMMY_ACK":
-            pass
+        else:
+            raise Exception("Packet type not recognised")
 
         return
         yield  # self.env.timeout(0.0)
@@ -231,10 +214,12 @@ class Node(object):
 
         self.env.process(self.net.forward_packet(packet))
 
+
     def update_entropy(self, packet):
         for i, pr in enumerate(packet.probability_mass):
             if pr != 0.0:
                 self.env.entropy[i] += -(float(pr) * math.log(float(pr), 2))
+
 
     def add_pkt_in_pool(self, packet):
         ''' Method adds incoming packet in mixnode pool and updates the vector
@@ -260,25 +245,27 @@ class Node(object):
             self.probability_mass = dist_pm.copy()
             self.sender_estimates = dist_se.copy()
 
+
     def set_start_logs(self, time=0.0):
         yield self.env.timeout(time)
         self.start_logs = True
         if self.verbose:
             print("> The startup phase done. Logs are now on for Client %s." % self.id)
 
+
     def simulate_real_traffic(self, dest):
         #  This function is used in the test mode
-        ''' This method generates messages simulating those of normal communication (email).
-            It first, generates a random message, splits it into packets and then adds all
-            the packets of the message to the outgoing buffer.
+        ''' This method generates the actual messages for which we compute the entropy.
+            The rate at which we generate this traffic is defined by rate_generating variable in
+            the config file.
 ​
             Keyword arguments:
             dest - the destination of the message.
         '''
         i = 0
 
-        # this while True should be changed to a some while i < X if we want to use the event as the condition to stop simulation
         while i < self.conf["misc"]["num_target_packets"]:
+
             yield self.env.timeout(float(self.rate_generating))
 
             msg = Message.random(conf=self.conf, net=self.net, sender=self, dest=dest)  # New Message
@@ -292,6 +279,7 @@ class Node(object):
             self.env.message_ctr += 1
         self.env.finished = True
 
+
     def terminate(self, delay=0.0):
         ''' Function changes user's alive status to False after a particular delay
             Keyword argument:
@@ -299,7 +287,7 @@ class Node(object):
         '''
         yield self.env.timeout(delay)
         self.alive = False
-        print("Client %s terminated at time %s ." % (self.id, self.env.now))
+        print("Node %s terminated at time %s ." % (self.id, self.env.now))
 
 
     def add_to_buffer(self, packets):

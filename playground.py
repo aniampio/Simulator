@@ -1,4 +1,4 @@
-from simulation_modes import test_mode, new_mode
+from simulation_modes import test_mode
 import os
 # from experiments import plotting
 from metrics import anonymity_metrics
@@ -26,8 +26,8 @@ if __name__ == "__main__":
 		except:
 			pass
 
-	new_mode.run(exp_dir='playground_experiment', conf_file=None, conf_dic=config)
-	throughput = new_mode.throughput
+	test_mode.run(exp_dir='playground_experiment', conf_file=None, conf_dic=config)
+	throughput = test_mode.throughput
 
 	packetLogsDir = './playground_experiment/logs/packet_log.csv'
 	entropyLogsDir = './playground_experiment/logs/last_mix_entropy.csv'
