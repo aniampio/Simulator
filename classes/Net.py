@@ -26,30 +26,32 @@ class Network(object):
         else:
             if type == "cascade":
                 self.topology["Type"] = "cascade"
-                self.mixnodes = [Node(env, conf, self, id="M%s" % i, loggers = loggers) for i in range(self.conf["network"]["num_nodes"])]
+                self.mixnodes = [Node(env, conf, self, id="M%s" % i, loggers = loggers) for i in range(self.conf["network"]["cascade"]["cascade_len"])]
                 self.init_cascade()
             elif type == "stratified":
                 self.topology["Type"] = "stratified"
-                num_mixnodes = int(self.conf["network"]["layers"]) * int(self.conf["network"]["layer_size"])
+                num_mixnodes = int(self.conf["network"]["stratified"]["layers"]) * int(self.conf["network"]["stratified"]["layer_size"])
                 self.mixnodes = [Node(env, conf, self, id="M%s" % i, loggers = loggers) for i in range(num_mixnodes)]
                 self.init_stratified()
             elif type == "multi_cascade":
                 pass
             else:
                 raise Exception("Didn't recognize the network type")
+        print("Current topology: ", self.topology)
 
     def init_p2p(self):
         self.topology["peers"] = self.peers.copy()
 
     def init_cascade(self):
         self.topology["cascade"] = self.mixnodes.copy()
+        print(self.topology)
 
     def init_multi_cascade(self):
         pass
 
     def init_stratified(self):
-        num_layers = int(self.conf["network"]["layers"])
-        mixes_per_layer = int(self.conf["network"]["layer_size"])
+        num_layers = int(self.conf["network"]["stratified"]["layers"])
+        mixes_per_layer = int(self.conf["network"]["stratified"]["layer_size"])
 
         layers = [self.mixnodes[i * mixes_per_layer:(i + 1) * mixes_per_layer] for i in range(0, num_layers)]
         self.topology["Layers"] =  layers
@@ -63,13 +65,12 @@ class Network(object):
 
         if self.topology["Type"] == "stratified":
             tmp_route = [random.choice(L) for L in self.topology["Layers"]]
+            print("Selected path: ", tmp_route)
         elif self.topology["Type"] == "cascade":
             tmp_route = self.topology["cascade"].copy()
         elif self.topology["Type"] == "p2p":
             tmp_route = random.sample(self.peers, 3)
 
-        for i, m in enumerate(tmp_route):
-            m.position = i
         return tmp_route
 
 

@@ -3,6 +3,7 @@ import math
 import numpy as np
 from classes.Packet import Packet
 from classes.Message import Message
+import random
 
 class Node(object):
 
@@ -46,6 +47,7 @@ class Node(object):
         self.send_ACK = self.conf["clients"]["ACK"]
         self.num_received_packets = 0
         self.msg_buffer_in = {}
+        self.start_logs = False
 
     def start(self, dest):
         ''' Main client method; It sends packets out.
@@ -136,14 +138,25 @@ class Node(object):
             self.pkts_received += 1
             self.add_pkt_in_pool(packet)
 
-            delay = get_exponential_delay(self.avg_delay) if self.avg_delay != 0.0 else 0.0
-            wait = delay + 0.00036 # add the time of processing the Sphinx packet.
-            yield self.env.timeout(wait)
+            # Choose mixing technique - batching or delaying;
+            # Currently batching is only for cascades
+            if self.net.type == "cascade" and self.conf["mixnodes"]["batch"] == True:
 
-            if not packet.dropped: # It may get dropped if pool gets full, while waiting
-                self.forward_packet(packet)
+                if len(self.pool) == self.conf["mixnodes"]["batch_size"]:
+                    batch = list(self.pool.keys())[:1000]
+                    random.shuffle(batch)
+                    for k in batch:
+                        if k in self.pool.keys():
+                            self.forward_packet(self.pool[k])
             else:
-                pass
+                delay = get_exponential_delay(self.avg_delay) if self.avg_delay != 0.0 else 0.0
+                wait = delay + 0.00036 # add the time of processing the Sphinx packet.
+                yield self.env.timeout(wait)
+
+                if not packet.dropped: # It may get dropped if pool gets full, while waiting
+                    self.forward_packet(packet)
+                else:
+                    pass
 
 
     def process_received_packet(self, packet):
@@ -230,7 +243,7 @@ class Node(object):
         '''
         self.inter_pkts += 1
         if self.probability_mass is None and self.sender_estimates is None:
-            self.pool[packet.id] = packet  # Add Packet in Pool
+            self.pool[packet.id] = packet
             self.probability_mass = packet.probability_mass.copy()
             self.sender_estimates = packet.sender_estimates.copy()
         else:
@@ -295,3 +308,6 @@ class Node(object):
             tmp_now = self.env.now
             pkt.time_queued = tmp_now
             self.pkt_buffer_out.append(pkt)
+
+    def __repr__(self):
+        return self.id

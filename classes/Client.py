@@ -15,16 +15,6 @@ class Client(Node):
         super().__init__(env=env, conf=conf, net=net, loggers=loggers, id=id)
 
 
-        self.rate_ack = 1.0/float(self.conf["clients"]["rate_ack"])
-        # This field is used to notify whether we can start logging. It should be set
-        # to true when the system in a stady state
-        self.start_logs = False
-        #Monitoring
-        self.RTTs = np.array([])
-        self.verbose = False
-        self.num_received_packets = 0
-
-
     def schedule_retransmits(self):
         pass
 
@@ -45,6 +35,3 @@ class Client(Node):
         ''' Method prints all the messages gathered in the buffer of incoming messages.'''
         for msg in self.msg_buffer_in:
             msg.output()
-
-    def __repr__(self):
-        return self.id

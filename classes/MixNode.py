@@ -9,17 +9,9 @@ import math
 
 
 class MixNode(Node):
-    def __init__(self, env, conf, net=None, layer=None, logger=None, corrupt=False, id=None):
+    def __init__(self, env, conf, net=None, logger=None, corrupt=False, id=None):
 
         super().__init__(env=env, net=net, loggers=logger, conf=conf, id=id)
-        self.position = layer
-
-        #Operation
-        self.AQM = self.conf["mixnodes"]["AQM"]
-        if self.conf["mixnodes"]["avg_delay"] == 0.0:
-            self.avg_delay = 0.0
-        else:
-            self.avg_delay = float(self.conf["mixnodes"]["avg_delay"])
 
 
     def drop_random(self):
@@ -33,6 +25,3 @@ class MixNode(Node):
 
     def __hash__(self):
         return self.id.__hash__()
-
-    def __repr__(self):
-        return self.id

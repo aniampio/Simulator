@@ -61,7 +61,7 @@ def run_p2p(env, conf, net, loggers):
         env.process(c.start(random.choice(peers)))
         env.process(c.start_loop_cover_traffc())
 
-    env.process(SenderT1.start(dest=random.choice(peer)))
+    env.process(SenderT1.start(dest=random.choice(peers)))
     env.process(SenderT1.start_loop_cover_traffc())
     env.process(SenderT2.start(dest=random.choice(peers)))
     env.process(SenderT2.start_loop_cover_traffc())
@@ -161,8 +161,8 @@ def run_client_server(env, conf, net, loggers):
     print("> Finished the preparation")
 
     # Start logging since system in steady state
-    for m in net.mixnodes:
-        m.mixlogging = True
+    for p in net.mixnodes:
+        p.mixlogging = True
 
     env.process(SenderT1.simulate_real_traffic(recipient))
 

@@ -11,18 +11,29 @@
         "execution": 100,
         "cooldown": 1000},
     "network": {
-        "topology": "stratified",
-        "layers": 3,
-        "layer_size": 10,
-        "num_nodes": 3,
-        "num_gateways": 0},
+        "topology" : "stratified",
+        "cascade" : {
+          "cascade_len": 3,
+          "num_gateways": 0},
+        "stratified" : {
+          "layers": 3,
+          "layer_size": 20,
+          "num_gateways": 0
+        },
+        "multi_cascade" : {
+          "cascade_len" : 3,
+          "num_cascades" : 5
+        }
+      },
     "packet": {
         "packet_size": 0},
     "message": {
         "min_msg_size": 2,
         "max_msg_size": 2},
     "mixnodes": {
-			"avg_delay": 1.0,
+			"avg_delay": 5.0,
+      "batch": false,
+      "batch_size" : 1000,
 			"AQM":false},
     "clients": {
         "number":100,
@@ -37,5 +48,5 @@
         "max_retransmissions":5},
     "misc": {
         "id_len": 32,
-        "num_target_packets": 10}
+        "num_target_packets": 100}
 }
