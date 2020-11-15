@@ -8,10 +8,10 @@
         "mix_log": "mix_log.json"},
     "phases":   {
         "burnin": 100,
-        "execution": 100,
-        "cooldown": 500},
+        "execution": 500,
+        "cooldown": 2000},
     "network": {
-        "topology" : "stratified",
+        "topology" : "cascade",
         "cascade" : {
           "cascade_len": 3,
           "num_gateways": 0},
@@ -22,7 +22,7 @@
         },
         "multi_cascade" : {
           "cascade_len" : 3,
-          "num_cascades" : 5
+          "num_cascades" : 2
         },
         "p2p" : {
           "path_length" : 3
@@ -34,12 +34,12 @@
         "min_msg_size": 2,
         "max_msg_size": 2},
     "mixnodes": {
-			"avg_delay": 5.0,
-      "batch": false,
+			"avg_delay": 0.1,
+      "batch": true,
       "batch_size" : 1000,
 			"AQM":false},
     "clients": {
-        "number":100,
+        "number":2000,
         "sim_add_buffer": 1.0,
         "rate_sending": 1.0,
         "rate_ack": 0.5,

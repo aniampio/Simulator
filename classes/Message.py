@@ -1,6 +1,7 @@
 from classes.Utilities import random_string
 import random
 from classes.Packet import Packet
+import math
 
 class Message():
     ''' This class defines an object of a Message, which is a message send between

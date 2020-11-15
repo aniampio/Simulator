@@ -47,6 +47,7 @@ class Node(object):
         self.num_received_packets = 0
         self.msg_buffer_in = {}
         self.start_logs = False
+        self.next_round_batching = True
 
     def start(self, dest):
         ''' Main client method; It sends packets out.
@@ -57,6 +58,7 @@ class Node(object):
         '''
 
         delays = []
+
         while True:
             if self.alive:
                 if delays == []:
@@ -120,6 +122,18 @@ class Node(object):
 
         self.env.process(self.net.forward_packet(packet))
 
+    def process_batch_round(self):
+        batch = list(self.pool.keys())[:int(self.conf["mixnodes"]["batch_size"])]
+        random.shuffle(batch)
+        while batch:
+            pktid = batch.pop()
+            if pktid in self.pool.keys():
+                pkt = self.pool[pktid]
+                self.forward_packet(pkt)
+
+        self.next_round_batching = True
+        return
+        yield
 
     def process_packet(self, packet):
         ''' Function performs processing of the given packet and logs information
@@ -137,16 +151,10 @@ class Node(object):
             self.pkts_received += 1
             self.add_pkt_in_pool(packet)
 
-            # Choose mixing technique - batching or delaying;
-            # Currently batching is only for cascades
-            if self.net.type == "cascade" and self.conf["mixnodes"]["batch"] == True:
-
-                if len(self.pool) == self.conf["mixnodes"]["batch_size"]:
-                    batch = list(self.pool.keys())[:1000]
-                    random.shuffle(batch)
-                    for k in batch:
-                        if k in self.pool.keys():
-                            self.forward_packet(self.pool[k])
+            if self.conf["mixnodes"]["batch"] == True:
+                if len(self.pool) >= int(self.conf["mixnodes"]["batch_size"]) and self.next_round_batching == True:
+                    self.next_round_batching = False
+                    self.env.process(self.process_batch_round())
             else:
                 delay = get_exponential_delay(self.avg_delay) if self.avg_delay != 0.0 else 0.0
                 wait = delay + 0.00036 # add the time of processing the Sphinx packet.
@@ -168,6 +176,7 @@ class Node(object):
 
         packet.time_delivered = self.env.now
         self.env.total_messages_received += 1
+        # print(self.env.message_ctr)
 
         if packet.type == "REAL":
             self.num_received_packets += 1
@@ -191,9 +200,7 @@ class Node(object):
                   self.env.stop_sim_event.succeed()
 
         elif packet.type == "DUMMY":
-            if self.send_dummy_ACK:
-                ack_pkt = Packet.ack(conf=self.conf, net=self.net, dest=packet.real_sender, sender=self, packet_id=packet.id, msg_id=packet.msg_id)
-                self.add_to_ack_buffer(ack_pkt)
+            pass
         else:
             raise Exception("Packet type not recognised")
 
@@ -261,7 +268,7 @@ class Node(object):
         yield self.env.timeout(time)
         self.start_logs = True
         if self.verbose:
-            print("> The startup phase done. Logs are now on for Client %s." % self.id)
+            print("> Logs set on for Client %s." % self.id)
 
 
     def simulate_real_traffic(self, dest):
@@ -286,8 +293,8 @@ class Node(object):
                 pkt.time_queued = current_time
                 pkt.probability_mass[i] = 1.0
             self.add_to_buffer(msg.pkts)
-            i += 1
             self.env.message_ctr += 1
+            i += 1
         self.env.finished = True
 
 

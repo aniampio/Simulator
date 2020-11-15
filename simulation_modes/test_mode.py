@@ -165,6 +165,7 @@ def run_client_server(env, conf, net, loggers):
         p.mixlogging = True
 
     env.process(SenderT1.simulate_real_traffic(recipient))
+    print("> Started sending traffic for measurments")
 
     env.run(until=env.stop_sim_event)  # Run until the stop_sim_event is triggered.
     print("> Main part of simulation finished. Starting cooldown phase.")
