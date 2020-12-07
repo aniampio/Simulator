@@ -47,7 +47,9 @@ class Node(object):
         self.num_received_packets = 0
         self.msg_buffer_in = {}
         self.start_logs = False
-        self.next_round_batching = True
+        self.batch_num = 0
+        self.free_to_batch = True
+
 
     def start(self, dest):
         ''' Main client method; It sends packets out.
@@ -122,18 +124,21 @@ class Node(object):
 
         self.env.process(self.net.forward_packet(packet))
 
+
     def process_batch_round(self):
+        self.batch_num += 1
+
         batch = list(self.pool.keys())[:int(self.conf["mixnodes"]["batch_size"])]
         random.shuffle(batch)
-        while batch:
-            pktid = batch.pop()
+        for pktid in batch:
             if pktid in self.pool.keys():
                 pkt = self.pool[pktid]
+                yield self.env.timeout(0.000386) # add some delay for packet processing
                 self.forward_packet(pkt)
-
-        self.next_round_batching = True
+        self.free_to_batch = True
         return
         yield
+
 
     def process_packet(self, packet):
         ''' Function performs processing of the given packet and logs information
@@ -144,20 +149,20 @@ class Node(object):
             Keyword arguments:
             packet - the packet which should be processed.
         '''
-
         if self.id == packet.dest.id:
             self.env.process(self.process_received_packet(packet))
         else:
             self.pkts_received += 1
             self.add_pkt_in_pool(packet)
 
-            if self.conf["mixnodes"]["batch"] == True:
-                if len(self.pool) >= int(self.conf["mixnodes"]["batch_size"]) and self.next_round_batching == True:
-                    self.next_round_batching = False
+            if (self.net.type == "cascade" or self.net.type == "multi_cascade") and self.conf["mixnodes"]["batch"] == True:
+                if len(self.pool) >= int(self.conf["mixnodes"]["batch_size"]) and self.free_to_batch == True:
+                    self.free_to_batch = False
                     self.env.process(self.process_batch_round())
             else:
+
                 delay = get_exponential_delay(self.avg_delay) if self.avg_delay != 0.0 else 0.0
-                wait = delay + 0.00036 # add the time of processing the Sphinx packet.
+                wait = delay + 0.000386 # add the time of processing the Sphinx packet.
                 yield self.env.timeout(wait)
 
                 if not packet.dropped: # It may get dropped if pool gets full, while waiting

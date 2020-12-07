@@ -90,14 +90,15 @@ def run_p2p(env, conf, net, loggers):
     env.run(until=env.stop_sim_event)  # Run until the stop_sim_event is triggered.
     print("> Main part of simulation finished. Starting cooldown phase.")
 
-    # Log entropy
-    loggers[2].info(StructuredMessage(metadata=tuple(env.entropy)))
 
     # ------ RUNNING THE COOLDOWN PHASE ----------
-    if conf["phases"]["burnin"] > 0.0:
-        env.run(until=env.now + conf["phases"]["cooldown"])
+    env.run(until=env.now + conf["phases"]["cooldown"])
 
+
+    # Log entropy
+    loggers[2].info(StructuredMessage(metadata=tuple(env.entropy)))
     print("> Cooldown phase finished.")
+
     time_finished = env.now
     time_finished_unix = datetime.datetime.now()
 
@@ -136,6 +137,8 @@ def run_client_server(env, conf, net, loggers):
     recipient.verbose = True
     print("Target Recipient: ", recipient.id)
 
+    net.mixnodes[0].verbose = True
+
     for c in clients:
         c.verbose = True
         env.process(c.start(random.choice(clients)))
@@ -172,10 +175,11 @@ def run_client_server(env, conf, net, loggers):
 
     # Log entropy
     loggers[2].info(StructuredMessage(metadata=tuple(env.entropy)))
-
     # ------ RUNNING THE COOLDOWN PHASE ----------
-    if conf["phases"]["burnin"] > 0.0:
-        env.run(until=env.now + conf["phases"]["cooldown"])
+    env.run(until=env.now + conf["phases"]["cooldown"])
+
+    # Log entropy
+    loggers[2].info(StructuredMessage(metadata=tuple(env.entropy)))
 
     print("> Cooldown phase finished.")
     time_finished = env.now
@@ -194,6 +198,7 @@ def run_client_server(env, conf, net, loggers):
     for m in net.mixnodes:
         mixthroughputs.append(float(m.pkts_sent) / float(time_finished-time_started))
 
+    print("Total number of packets which went through the network: ", float(env.total_messages_received))
     print("Network throughput %f / second: " % throughput)
     print("Average mix throughput %f / second, with std: %f" % (np.mean(mixthroughputs), np.std(mixthroughputs)))
 
