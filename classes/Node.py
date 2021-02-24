@@ -53,10 +53,10 @@ class Node(object):
 
     def start(self, dest):
         ''' Main client method; It sends packets out.
-        It checks if there are any new packets in the outgoing queue.
+        It checks if there are any new packets in the outgoing buffer.
         If it finds any, it sends the first of them.
-        If none are found, the client may sent out a dummy
-        packet (i.e., cover traffic) depending on the mixnet settings.
+        If none are found, the client sends out a dummy
+        packet (i.e., cover loop packet).
         '''
 
         delays = []
@@ -74,7 +74,6 @@ class Node(object):
                     self.send_packet(tmp_pkt)
                     self.env.total_messages_sent += 1
 
-                # Send dummy loop packet when the packet buffer is empty,(currently we don't send dummies during the cooldown phase)
                 else:
                     tmp_pkt = Packet.dummy(conf=self.conf, net=self.net, dest=self, sender=self)  # sender_estimates[sender.label] = 1.0
                     tmp_pkt.time_queued = self.env.now
