@@ -69,16 +69,14 @@ class Node(object):
                 delay = delays.pop()
                 yield self.env.timeout(float(delay))
 
-                pkt_sent = False
-                while len(self.pkt_buffer_out) > 0: #If there is a packet to be send
+                if len(self.pkt_buffer_out) > 0: #If there is a packet to be send
                     tmp_pkt = self.pkt_buffer_out.pop(0)
                     self.send_packet(tmp_pkt)
                     self.env.total_messages_sent += 1
-                    pkt_sent = True
 
-                # Send dummy packet when the packet buffer is empty,(currently we don't send dummies during the cooldown phase)
-                if pkt_sent == False:
-                    tmp_pkt = Packet.dummy(conf=self.conf, net=self.net, dest=dest, sender=self)  # sender_estimates[sender.label] = 1.0
+                # Send dummy loop packet when the packet buffer is empty,(currently we don't send dummies during the cooldown phase)
+                else:
+                    tmp_pkt = Packet.dummy(conf=self.conf, net=self.net, dest=self, sender=self)  # sender_estimates[sender.label] = 1.0
                     tmp_pkt.time_queued = self.env.now
                     self.send_packet(tmp_pkt)
                     self.env.total_messages_sent += 1
