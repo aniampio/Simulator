@@ -84,7 +84,7 @@ def run_p2p(env, conf, net, loggers):
     for p in net.peers:
         p.mixlogging = True
 
-    env.process(SenderT1.simulate_real_traffic(recipient))
+    env.process(SenderT1.simulate_adding_packets_into_buffer(recipient))
     print("> Started sending traffic for measurments")
 
     env.run(until=env.stop_sim_event)  # Run until the stop_sim_event is triggered.
@@ -167,7 +167,7 @@ def run_client_server(env, conf, net, loggers):
     for p in net.mixnodes:
         p.mixlogging = True
 
-    env.process(SenderT1.simulate_real_traffic(recipient))
+    env.process(SenderT1.simulate_adding_packets_into_buffer(recipient))
     print("> Started sending traffic for measurments")
 
     env.run(until=env.stop_sim_event)  # Run until the stop_sim_event is triggered.

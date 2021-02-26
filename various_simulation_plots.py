@@ -428,7 +428,8 @@ def plot8():
 	# for i, txt in enumerate(n):
 	# 	ax1.annotate(txt, (users[i], cover_traffic[i]+0.2))
 
-	plt.show()
+	# plt.show()
+	plt.savefig('tmp.png')
 
 def plot9():
 	''' This plot shows how the volumes of cover traffic decrease when the number of users increases.
@@ -436,9 +437,10 @@ def plot9():
 
 	users = [100, 500, 1000, 5000, 10000, 50000, 100000]
 	cover_traffic = [10, 2, 0.8, 0, 0, 0, 0]
-	real_traffic = [100, 500, 1000, 5000, 10000, 50000, 100000]
-	# 100, 1000, 5K, 10K, 50K, 100K
-	anonymity = [1000, 1000, 1000, int(2**10.971285488698075), int(2**12.6282858011491), int(2**14.211534326347138), int(2**15.794782851545175)]
+	# real_traffic = [100, 500, 1000, 5000, 10000, 50000, 100000]
+	# 100, 500, 1000, 5K, 10K, 50K, 100K
+	anonymity = [10, 10, 10, 10.971285488698075, 12.6282858011491, 14.211534326347138, 15.794782851545175]
+	anonymity = [10, 10, 10, 10.971285488698075, 12.6282858011491, 14.211534326347138, 15.794782851545175]
 
 	fig1, ax1 = plt.subplots()
 	ax1.set_xscale('log')
@@ -449,15 +451,22 @@ def plot9():
 	ax1.tick_params(axis='y', labelcolor=color1)
 	ax1.set_ylabel('Cover traffic \n [cover packets / user in addition to real packets]', color=color1, fontsize=12, labelpad=10)
 
+	ax2 = ax1.twinx()
+	color = 'darkmagenta'
+	ax2.plot(users, anonymity, "x-", color=color, linestyle=':', markersize=8, markeredgecolor=color, alpha=0.7, markeredgewidth=1.5)
+	ax2.tick_params(axis='y', labelcolor=color)
+	ax2.set_ylabel('Anonymity [Entropy]', color=color)
+	ax2.set_ylim(0, 50)
+	ax2.grid()
+
 	# ax1.set_title("Cover traffic needed to ensure entropy at least 10", fontsize=14)
 
 	# n = [1000, 1000, 1000, 203, 123, 111, 111]
-	for i, txt in enumerate(anonymity):
-		ax1.annotate(txt, (users[i], cover_traffic[i]+0.2))
+	# for i, txt in enumerate(anonymity):
+	# 	ax1.annotate(txt, (users[i], cover_traffic[i]+0.2))
 
-	plt.show()
-
-
+	# plt.show()
+	plt.savefig('tmp.png')
 
 if __name__ == "__main__":
-	plot5()
+	plot9()

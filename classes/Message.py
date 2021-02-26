@@ -32,8 +32,9 @@ class Message():
     def random(cls, conf, net, sender, dest):
         ''' This class method creates a random message, with random payload. '''
 
-        size = random.randint(conf["message"]["min_msg_size"], conf["message"]["max_msg_size"])
-        payload = random_string(size)
+        # TODO: add variable message size
+        # size = random.randint(conf["message"]["min_msg_size"], conf["message"]["max_msg_size"])
+        payload = random_string(conf["packet"]["packet_size"])
 
         m = cls(conf=conf, net=net, payload=payload, real_sender=sender, dest=dest)
         return m

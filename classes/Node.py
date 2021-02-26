@@ -290,6 +290,7 @@ class Node(object):
         '''
         i = 0
 
+        # Note: if you want to send messages or larger size than a single packet this function must be updated
         while i < self.conf["misc"]["num_target_packets"]:
 
             yield self.env.timeout(float(self.rate_generating))
