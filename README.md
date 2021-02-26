@@ -15,4 +15,4 @@ To run the simulator you need the command
 
 You can change the parameters of the simulation in file `test_config.json`
 
-Feel free to contact me at `ania@nymtech.net`
+This simulator is a part of an ongoing research work. If you have any questions, please contact me at `ania@nymtech.net`
