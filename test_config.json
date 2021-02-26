@@ -17,7 +17,7 @@
           "num_gateways": 0},
         "stratified" : {
           "layers": 3,
-          "layer_size": 2,
+          "layer_size": 3,
           "num_gateways": 0
         },
         "multi_cascade" : {
@@ -43,7 +43,7 @@
         "sim_add_buffer": 1.0,
         "rate_sending": 1.0,
         "rate_ack": 0.5,
-        "cover_traffic":true,
+        "cover_traffic":false,
         "cover_traffic_rate":1.0,
         "ACK":false,
         "retransmit":false,

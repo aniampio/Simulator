@@ -4,7 +4,6 @@ import numpy
 from classes.Node import Node
 from classes.Client import Client
 import experiments.Settings
-import networkx as nx
 import os
 
 

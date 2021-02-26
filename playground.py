@@ -3,7 +3,6 @@ import os
 # from experiments import plotting
 from metrics import anonymity_metrics
 import pandas as pd
-import shutil
 import json
 
 
@@ -49,7 +48,7 @@ if __name__ == "__main__":
 		print(">>> E2E Unlinkability: (epsilon=%f, delta=%f)" % unlinkability)
 	print("\n\n")
 	print("-------- Performance metrics --------")
-	print(">> Overall latency: %f seconds" % (latency))
+	print(">> Overall latency: %f seconds (including mixing delay and packet cryptographic processing)" % (latency))
 	print(">> Throuhput of the network: %f [packets / second]" % throughput)
 	print("-------------------------------------------------------")
 
