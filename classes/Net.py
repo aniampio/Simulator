@@ -40,7 +40,7 @@ class Network(object):
             else:
                 raise Exception("Didn't recognize the network type")
         print("Current topology: ", self.topology["Type"])
-        print("Batching yes/no: ", self.conf["mixnodes"]["batch"])
+        # print("Batching yes/no: ", self.conf["mixnodes"]["batch"])
 
     def init_p2p(self):
         self.topology["peers"] = self.peers.copy()

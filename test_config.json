@@ -11,7 +11,7 @@
         "execution": 500,
         "cooldown": 2000},
     "network": {
-        "topology" : "p2p",
+        "topology" : "stratified",
         "cascade" : {
           "cascade_len": 3,
           "num_gateways": 0},
