@@ -84,6 +84,9 @@ class Node(object):
 
 
     def start_loop_cover_traffc(self):
+        ''' Function responsible for managing the independent Poisson stream
+            of loop cover traffic.
+        '''
 
         if self.cover_traffic:
             delays = []
@@ -106,7 +109,6 @@ class Node(object):
 
     def send_packet(self, packet):
         ''' Methods sends a packet into the network,
-         adds it to the ack waiting-list,
          and logs information about the sending.
 ​
             Keyword arguments:
@@ -124,6 +126,8 @@ class Node(object):
 
 
     def process_batch_round(self):
+        ''' Additional function if we want to simulate a batching technique.
+        '''
         self.batch_num += 1
 
         batch = list(self.pool.keys())[:int(self.conf["mixnodes"]["batch_size"])]
@@ -131,7 +135,7 @@ class Node(object):
         for pktid in batch:
             if pktid in self.pool.keys():
                 pkt = self.pool[pktid]
-                yield self.env.timeout(0.000386) # add some delay for packet processing
+                yield self.env.timeout(0.000386) # add some delay for packet cryptographinc processing
                 self.forward_packet(pkt)
         self.free_to_batch = True
         return
@@ -142,11 +146,12 @@ class Node(object):
         ''' Function performs processing of the given packet and logs information
             about it and forwards it to the next destionation.
             While processing the packet, the function also calculates the probability
-            that the given packet has a specific sender label.
+            that the given packet comes from a particular sender (target sender).
 
             Keyword arguments:
             packet - the packet which should be processed.
         '''
+        # Check if this is the desired destination
         if self.id == packet.dest.id:
             self.env.process(self.process_received_packet(packet))
         else:
@@ -160,7 +165,7 @@ class Node(object):
             else:
 
                 delay = get_exponential_delay(self.avg_delay) if self.avg_delay != 0.0 else 0.0
-                wait = delay + 0.000386 # add the time of processing the Sphinx packet.
+                wait = delay + 0.000386 # add the time of processing the Sphinx packet (benchmarked using our Sphinx rust implementation).
                 yield self.env.timeout(wait)
 
                 if not packet.dropped: # It may get dropped if pool gets full, while waiting
@@ -274,9 +279,9 @@ class Node(object):
             print("> Logs set on for Client %s." % self.id)
 
 
-    def simulate_real_traffic(self, dest):
+    def simulate_adding_packets_into_buffer(self, dest):
         #  This function is used in the test mode
-        ''' This method generates the actual messages for which we compute the entropy.
+        ''' This method generates the actual 'real' messages for which we compute the entropy.
             The rate at which we generate this traffic is defined by rate_generating variable in
             the config file.
 ​
