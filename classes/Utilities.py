@@ -5,12 +5,18 @@ import logging
 import logging.handlers
 from experiments.Settings import *
 import json
+import numpy 
 
 
 def random_string(size):
     return hexlify(urandom(size)).decode('utf8')
     # return ''.join(random.choice(chars) for x in range(size))
 
+def get_exponential_delay(avg_delay, cache=[]):
+    if cache == []:
+        cache.extend(list(numpy.random.exponential(avg_delay, 10000)))
+
+    return cache.pop()
 
 class StructuredMessage(object):
     def __init__(self, metadata):

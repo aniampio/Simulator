@@ -1,6 +1,7 @@
 from classes.Utilities import random_string
 import random
 from classes.Packet import Packet
+import math
 
 class Message():
     ''' This class defines an object of a Message, which is a message send between
@@ -31,7 +32,7 @@ class Message():
     def random(cls, conf, net, sender, dest):
         ''' This class method creates a random message, with random payload. '''
 
-        size = random.randint(conf["clients"]["min_msg_size"], conf["clients"]["max_msg_size"])
+        size = random.randint(conf["message"]["min_msg_size"], conf["message"]["max_msg_size"])
         payload = random_string(size)
 
         m = cls(conf=conf, net=net, payload=payload, real_sender=sender, dest=dest)
@@ -49,7 +50,7 @@ class Message():
 
         pkts = []
 
-        pkt_size = float(self.conf["network"]["packet_size"])
+        pkt_size = float(self.conf["packet"]["packet_size"])
 
         # to be able to have atomic messages, we keep this if condition
         if pkt_size == 0:
@@ -57,12 +58,12 @@ class Message():
             num_fragments = 1
         else:
             num_fragments = int(math.ceil(float(len(self.payload))/pkt_size))
-            fragments = [self.payload[i:i + int(self.conf["network"]["packet_size"])] for i in range(0, len(self.payload), int(self.conf["network"]["packet_size"]))]
+            fragments = [self.payload[i:i + int(self.conf["packet"]["packet_size"])] for i in range(0, len(self.payload), int(self.conf["packet"]["packet_size"]))]
 
         for i, f in enumerate(fragments):
-            rand_route = net.select_random_route(length=3)
+            rand_route = net.select_random_route()
             rand_route = rand_route + [dest]
-            tmp_pkt = Packet(conf=self.conf, route=rand_route, payload=f, sender=self.real_sender, msg_id=self.id, type="REAL", order=i+1, num=num_fragments, message=self)
+            tmp_pkt = Packet(conf=self.conf, route=rand_route, payload=f, sender=self.real_sender, dest=dest, msg_id=self.id, type="REAL", order=i+1, num=num_fragments, message=self)
             pkts.append(tmp_pkt)
             self.reconstruct.add(tmp_pkt.id)
 

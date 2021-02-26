@@ -6,16 +6,17 @@ class Packet():
         transporting message blocks among clients.
     '''
 
-    __slots__ = ['conf', 'id', 'route', 'payload', 'real_sender', 'msg_id', 'message', 'fragments', 'type', 'pool_logs', 'dropped', 'current_node', 'times_transmitted',
+    __slots__ = ['conf', 'id', 'route', 'payload', 'real_sender', 'dest', 'msg_id', 'message', 'fragments', 'type', 'pool_logs', 'dropped', 'current_node', 'times_transmitted',
                 'ACK_Received', 'time_queued', 'time_sent', 'time_delivered', 'sender_estimates', 'probability_mass']
 
-    def __init__(self, conf, route, payload, sender, type, packet_id = None, msg_id="DUMMY", order=1, num=1, message=None):
+    def __init__(self, conf, route, payload, sender, dest, type, packet_id = None, msg_id="DUMMY", order=1, num=1, message=None):
         self.conf = conf
         self.id = packet_id or random_string(32)
 
         self.route = route
         self.payload = payload
         self.real_sender = sender
+        self.dest = dest
 
         self.msg_id = msg_id
         self.message = message
@@ -37,7 +38,7 @@ class Packet():
         # Measurements
         self.sender_estimates = numpy.array([0.0, 0.0, 0.0]) #Other, A, B
         self.sender_estimates[self.real_sender.label] = 1.0
-        self.probability_mass = numpy.zeros(100)
+        self.probability_mass = numpy.zeros(self.conf["misc"]["num_target_packets"])
 
         if self.type=="REAL":
             self.message.reconstruct.add(self.id)
@@ -48,36 +49,36 @@ class Packet():
         '''Method used for constructing a new Packet where
         the content is defined by the client but the route is generated on the constructor.'''
 
-        rand_route = net.select_random_route(length=3)
+        rand_route = net.select_random_route()
         rand_route = rand_route + [dest]
-        return cls(conf=conf, route=rand_route, payload=payload, sender=sender, type=type, num=num, msg_id=msg_id)
+        return cls(conf=conf, route=rand_route, payload=payload, sender=sender, dest=dest, type=type, num=num, msg_id=msg_id)
 
 
     @classmethod
     def ack(cls, conf, net, dest, sender, packet_id, msg_id):
         '''  The class method used for creating an ack Packet. '''
 
-        payload = random_string(conf["network"]["packet_size"])
-        rand_route = net.select_random_route(length=3)
+        payload = random_string(conf["packet"]["packet_size"])
+        rand_route = net.select_random_route()
         rand_route = rand_route + [dest]
-        return cls(conf=conf, route=rand_route, payload=payload, sender=sender, packet_id=packet_id, msg_id=msg_id, type="ACK")
+        return cls(conf=conf, route=rand_route, payload=payload, sender=sender, dest=dest, packet_id=packet_id, msg_id=msg_id, type="ACK")
 
     @classmethod
     def dummy(cls, conf, net, dest, sender):
         '''  The class method used for creating a dummy Packet. '''
 
-        payload = random_string(conf["network"]["packet_size"])
-        rand_route = net.select_random_route(length=3)
+        payload = random_string(conf["packet"]["packet_size"])
+        rand_route = net.select_random_route()
         rand_route = rand_route + [dest]
-        return cls(conf=conf, route=rand_route, payload=payload, sender=sender, type="DUMMY", msg_id="-")
+        return cls(conf=conf, route=rand_route, payload=payload, sender=sender, dest=dest, type="DUMMY", msg_id="-")
 
     @classmethod
     def dummy_ack(cls, conf, net, dest, sender):
 
-        payload = random_string(conf["network"]["ack_packet_size"])
-        rand_route = net.select_random_route(length=3)
+        payload = random_string(conf["packet"]["ack_packet_size"])
+        rand_route = net.select_random_route()
         rand_route = rand_route + [dest]
-        return cls(conf=conf, route=rand_route, payload=payload, sender=sender, type="DUMMY_ACK", msg_id="DUMMY_ACK")
+        return cls(conf=conf, route=rand_route, payload=payload, sender=sender, dest=dest, type="DUMMY_ACK", msg_id="DUMMY_ACK")
 
 
     def output(self):
