@@ -9,7 +9,7 @@
     "phases":   {
         "burnin": 100,
         "execution": 500,
-        "cooldown": 2000},
+        "cooldown": 1000},
     "network": {
         "topology" : "stratified",
         "cascade" : {
@@ -17,8 +17,8 @@
           "num_gateways": 0},
         "stratified" : {
           "layers": 3,
-          "layer_size": 3,
-          "num_gateways": 0
+          "layer_size": 500,
+          "num_gateways": 2
         },
         "multi_cascade" : {
           "cascade_len" : 3,
@@ -29,27 +29,28 @@
         }
       },
     "packet": {
-        "packet_size": 0},
+        "packet_size": 4096},
     "message": {
-        "min_msg_size": 2,
-        "max_msg_size": 2},
+        "min_msg_size": 204800,
+        "max_msg_size": 204800,
+        "exact_msg_size": 500000},
     "mixnodes": {
-			"avg_delay": 0.1,
+			"avg_delay": 0.05,
       "batch": false,
       "batch_size" : 1000,
 			"AQM":false},
     "clients": {
         "number":100,
-        "sim_add_buffer": 1.0,
-        "rate_sending": 1.0,
+        "sim_add_buffer": 5,
+        "rate_sending": 50.0,
         "rate_ack": 0.5,
-        "cover_traffic":false,
-        "cover_traffic_rate":1.0,
+        "cover_traffic": true,
+        "cover_traffic_rate":50.0,
         "ACK":false,
         "retransmit":false,
         "dummies_acks":false,
         "max_retransmissions":5},
     "misc": {
         "id_len": 32,
-        "num_target_packets": 1000}
+        "num_target_packets": 100}
 }
