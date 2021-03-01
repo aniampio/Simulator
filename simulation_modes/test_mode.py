@@ -1,6 +1,7 @@
 import simpy
 import os
 import datetime
+import time
 import numpy as np
 from collections import namedtuple
 
@@ -24,7 +25,7 @@ def get_loggers(log_dir, conf):
     message_logger.info(StructuredMessage(metadata=("Type", "CurrentTime", "ClientID", "MessageID", "NumPackets", "MsgTimeQueued", "MsgTimeSent", "MsgTimeDelivered", "MsgTransitTime", "MsgSize", "MsgRealSender")))
 
     entropy_logger = setup_logger('simulation.mix', os.path.join(log_dir, 'last_mix_entropy.csv'))
-    entropy_logger.info(StructuredMessage(metadata=tuple(['Entropy'+str(x) for x in range(int(conf["misc"]["num_target_packets"]))])))
+    entropy_logger.info(StructuredMessage(metadata=tuple(['Entropy'+str(x) for x in range(get_total_num_of_target_packets(conf))])))
 
     return (packet_logger, message_logger, entropy_logger)
 
@@ -32,18 +33,20 @@ def get_loggers(log_dir, conf):
 def setup_env(conf):
     env = simpy.Environment()
     env.stop_sim_event = env.event()
+    env.stop_cool_down_event = env.event()
     env.message_ctr = 0
     env.total_messages_sent = 0
     env.total_messages_received = 0
     env.finished = False
-    env.entropy = numpy.zeros(int(conf["misc"]["num_target_packets"]))
+    #env.entropy = numpy.zeros(int(conf["misc"]["num_target_messages"]))
+    env.entropy = numpy.zeros(get_total_num_of_target_packets(conf))
 
     return env
 
 
 
 def run_p2p(env, conf, net, loggers):
-    print("Runninf P2P topology")
+    print("Running P2P topology")
     peers = net.peers
     print("Number of active peers: ", len(peers))
 
@@ -70,7 +73,7 @@ def run_p2p(env, conf, net, loggers):
     env.process(recipient.start_loop_cover_traffic())
 
     print("---------" + str(datetime.datetime.now()) + "---------")
-    print("> Running the system for %s ticks to prepare it for measurment." % (conf["phases"]["burnin"]))
+    print("> Running the system for %s ticks to prepare it for measurement." % (conf["phases"]["burnin"]))
 
     # env.process(progress_update(env, 5))
     time_started = env.now
@@ -84,8 +87,8 @@ def run_p2p(env, conf, net, loggers):
     for p in net.peers:
         p.mixlogging = True
 
-    env.process(SenderT1.simulate_adding_packets_into_buffer(recipient))
-    print("> Started sending traffic for measurments")
+    env.process(SenderT1.simulate_real_traffic(recipient))
+    print("> Started sending traffic for measurements")
 
     env.run(until=env.stop_sim_event)  # Run until the stop_sim_event is triggered.
     print("> Main part of simulation finished. Starting cooldown phase.")
@@ -114,8 +117,8 @@ def run_p2p(env, conf, net, loggers):
     for p in net.peers:
         mixthroughputs.append(float(p.pkts_sent) / float(time_finished-time_started))
 
-    print("Network throughput %f / second: " % throughput)
-    print("Average mix throughput %f / second, with std: %f" % (np.mean(mixthroughputs), np.std(mixthroughputs)))
+    print("Network throughput: %f [packets/s]" % throughput)
+    print("Average mix throughput: %f [packets/s], with std: %f" % (np.mean(mixthroughputs), np.std(mixthroughputs)))
 
 
 
@@ -153,7 +156,9 @@ def run_client_server(env, conf, net, loggers):
     env.process(recipient.start_loop_cover_traffic())
 
     print("---------" + str(datetime.datetime.now()) + "---------")
-    print("> Running the system for %s ticks to prepare it for measurment." % (conf["phases"]["burnin"]))
+    print("> Running the system for %s ticks to prepare it for measurement." % (conf["phases"]["burnin"]))
+
+    env.process(check_progress(env, conf["phases"]["burnin"]))
 
     # env.process(progress_update(env, 5))
     time_started = env.now
@@ -167,15 +172,25 @@ def run_client_server(env, conf, net, loggers):
     for p in net.mixnodes:
         p.mixlogging = True
 
-    env.process(SenderT1.simulate_adding_packets_into_buffer(recipient))
-    print("> Started sending traffic for measurments")
+    env.process(SenderT1.simulate_real_traffic(recipient))
+    real_time_started_measurements = round(time.time())
+    tick_time_started_measurements = env.now
+    print("> Started sending traffic for measurements (sim tick {})".format(tick_time_started_measurements))
 
     env.run(until=env.stop_sim_event)  # Run until the stop_sim_event is triggered.
-    print("> Main part of simulation finished. Starting cooldown phase.")
+    real_time_ended_measurements = round(time.time())
+    total_real_time_measurements = real_time_ended_measurements - real_time_started_measurements
+    tick_time_ended_measurements = env.now
+    total_tick_time_measurements = tick_time_ended_measurements - tick_time_started_measurements
+    print("> Total measurements time: {} minutes.".format(total_real_time_measurements/60))
+    print("> Total measurements in ticks: {}.".format(total_tick_time_measurements))
+    print("> Main part of simulation finished at tick {}. Starting cooldown phase.".format(tick_time_ended_measurements))
+    end_cooldown_time = (conf["phases"]["cooldown"]/total_tick_time_measurements)*total_real_time_measurements
 
     # Log entropy
     loggers[2].info(StructuredMessage(metadata=tuple(env.entropy)))
     # ------ RUNNING THE COOLDOWN PHASE ----------
+    env.process(check_progress(env, env.now + conf["phases"]["cooldown"]))
     env.run(until=env.now + conf["phases"]["cooldown"])
 
     # Log entropy
@@ -185,6 +200,7 @@ def run_client_server(env, conf, net, loggers):
     time_finished = env.now
     time_finished_unix = datetime.datetime.now()
     # print("Reciever received: ", recipient.num_received_packets)
+    print("> End of Simulation at {}".format(datetime.datetime.now().strftime("%H:%M:%S")))
     print("> Total Simulation Time [in ticks]: " + str(time_finished-time_started) + "---------")
     print("> Total Simulation Time [in unix time]: " + str(time_finished_unix-time_started_unix) + "---------")
 
@@ -201,6 +217,16 @@ def run_client_server(env, conf, net, loggers):
     print("Total number of packets which went through the network: ", float(env.total_messages_received))
     print("Network throughput %f / second: " % throughput)
     print("Average mix throughput %f / second, with std: %f" % (np.mean(mixthroughputs), np.std(mixthroughputs)))
+
+
+def check_progress(env, max_tick):
+    last_value = -1
+    while env.now <= max_tick:
+        if env.now != last_value:
+            print("tick: {}/{} at {}".format(env.now, max_tick, datetime.datetime.now().strftime("%H:%M:%S")))
+            last_value = env.now
+            yield env.timeout(1)
+
 
 
 def flush_logs(loggers):
