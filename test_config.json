@@ -52,5 +52,5 @@
         "max_retransmissions":5},
     "misc": {
         "id_len": 32,
-        "num_target_packets": 100}
+        "num_target_messages": 100}
 }
