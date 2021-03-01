@@ -278,43 +278,51 @@ class Node(object):
             self.probability_mass = dist_pm.copy()
             self.sender_estimates = dist_se.copy()
 
-        def simulate_real_traffic(self, dest):
-            #  This function is used in the test mode
-            ''' This method generates the actual messages for which we compute the entropy.
-                The rate at which we generate this traffic is defined by rate_generating variable in
-                the config file.
-    ​
-                Keyword arguments:
-                dest - the destination of the message.
-            '''
-            i = 0
-            m = 0
-            total_num_target_packets = get_total_num_of_target_packets(self.conf)
-            print("> Simulating real traffic for {} messages of {} bytes split into {} packets of {} bytes.".format(
-                self.conf["misc"]["num_target_messages"], self.conf["message"]["exact_msg_size"],
-                total_num_target_packets, self.conf["packet"]["packet_size"]))
-            while m < self.conf["misc"]["num_target_messages"]:
 
-                yield self.env.timeout(float(self.rate_generating))
+    def set_start_logs(self, time=0.0):
+        yield self.env.timeout(time)
+        self.start_logs = True
+        if self.verbose:
+            print("> Logs set on for Client %s." % self.id)
 
-                msg = Message.random(conf=self.conf, net=self.net, sender=self, dest=dest)  # New Message
-                current_time = self.env.now
-                msg.time_queued = current_time  # The time when the message was created and placed into the queue
-                for pkt in msg.pkts:
-                    pkt.time_queued = current_time
-                    pkt.probability_mass[i] = 1.0
-                    i += 1
-                self.add_to_buffer(msg.pkts)
-                self.env.message_ctr += 1
-                m += 1
 
-                print(
-                    "[{}/{}] New message sent to recipient at tick {} ({}). Message Size: {} bytes (= {} packets)".format(
-                        m, self.conf["misc"]["num_target_messages"], self.env.now,
-                        datetime.datetime.now().strftime("%H:%M:%S"), msg.byte_size / 2, len(msg.pkts)))
+    def simulate_real_traffic(self, dest):
+        #  This function is used in the test mode
+        ''' This method generates the actual messages for which we compute the entropy.
+            The rate at which we generate this traffic is defined by rate_generating variable in
+            the config file.
+​
+            Keyword arguments:
+            dest - the destination of the message.
+        '''
+        i = 0
+        m = 0
+        total_num_target_packets = get_total_num_of_target_packets(self.conf)
+        print("> Simulating real traffic for {} messages of {} bytes split into {} packets of {} bytes.".format(
+            self.conf["misc"]["num_target_messages"], self.conf["message"]["exact_msg_size"],
+            total_num_target_packets, self.conf["packet"]["packet_size"]))
 
-            print("All messages have been sent. Waiting to receive them all.")
-            self.env.finished = True
+        while m < self.conf["misc"]["num_target_messages"]:
+            yield self.env.timeout(float(self.rate_generating))
+
+            msg = Message.random(conf=self.conf, net=self.net, sender=self, dest=dest)  # New Message
+            current_time = self.env.now
+            msg.time_queued = current_time  # The time when the message was created and placed into the queue
+            for pkt in msg.pkts:
+                pkt.time_queued = current_time
+                pkt.probability_mass[i] = 1.0
+                i += 1
+            self.add_to_buffer(msg.pkts)
+            self.env.message_ctr += 1
+            m += 1
+
+            print(
+                "[{}/{}] New message sent to recipient at tick {} ({}). Message Size: {} bytes (= {} packets)".format(
+                    m, self.conf["misc"]["num_target_messages"], self.env.now,
+                    datetime.datetime.now().strftime("%H:%M:%S"), msg.byte_size / 2, len(msg.pkts)))
+
+        print("All messages have been sent. Waiting to receive them all.")
+        self.env.finished = True
 
 
     def terminate(self, delay=0.0):
