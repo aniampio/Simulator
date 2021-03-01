@@ -90,7 +90,7 @@ class Network(object):
             packet - the packet to be forwarded.
         '''
         # TODO: If needed, some network delay can be added.
-        yield self.env.timeout(0)
+        yield self.env.timeout(0.05)
 
         # print(packet.current_node, packet.route, packet.dest)
         next_node = packet.route[packet.current_node + 1]
