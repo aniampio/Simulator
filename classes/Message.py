@@ -7,7 +7,7 @@ class Message():
     ''' This class defines an object of a Message, which is a message send between
     the sender and recipient. '''
 
-    __slots__ = ['conf', 'id', 'payload', 'real_sender', 'time_queued', 'time_sent', 'time_delivered', 'transit_time', 'reconstruct', 'complete_receiving', 'pkts']
+    __slots__ = ['conf', 'id', 'payload', 'real_sender', 'time_queued', 'time_sent', 'time_delivered', 'transit_time', 'reconstruct', 'complete_receiving', 'pkts', 'byte_size']
     def __init__(self, conf, net, payload, dest, real_sender, id=None):
 
         self.conf = conf
@@ -24,15 +24,20 @@ class Message():
 
         # State on reception
         self.complete_receiving = False
+
+        # Message size in bytes
+        self.byte_size = len(self.payload)
+
         # Packets
         self.pkts = self.split_into_packets(net, dest)
+
 
 
     @classmethod
     def random(cls, conf, net, sender, dest):
         ''' This class method creates a random message, with random payload. '''
 
-        size = random.randint(conf["message"]["min_msg_size"], conf["message"]["max_msg_size"])
+        size = int((conf["message"]["exact_msg_size"]))
         payload = random_string(size)
 
         m = cls(conf=conf, net=net, payload=payload, real_sender=sender, dest=dest)
@@ -50,15 +55,14 @@ class Message():
 
         pkts = []
 
-        pkt_size = float(self.conf["packet"]["packet_size"])
-
+        pkt_size = int(self.conf["packet"]["packet_size"]*2) # (*2) to deal with hex to string conversion
         # to be able to have atomic messages, we keep this if condition
         if pkt_size == 0:
             fragments = [self.payload]
             num_fragments = 1
         else:
-            num_fragments = int(math.ceil(float(len(self.payload))/pkt_size))
-            fragments = [self.payload[i:i + int(self.conf["packet"]["packet_size"])] for i in range(0, len(self.payload), int(self.conf["packet"]["packet_size"]))]
+            num_fragments = int(math.ceil(float(self.byte_size)/pkt_size))
+            fragments = [self.payload[i:i+pkt_size] for i in range(0, self.byte_size, pkt_size)]
 
         for i, f in enumerate(fragments):
             rand_route = net.select_random_route()
@@ -116,7 +120,7 @@ class Message():
         print("Message ID              : " + str(self.id))
         print("Real Sender             : " + str(self.pkts[0].real_sender))
         print("All fragments collected?: " + str(self.complete_receiving))
-        print("Original Fragments      : " + str(len(self.pkts)))
+        print("Original Fragments      : " + str(self.byte_size))
         print("Fragments sent          : " + str(self.pkts[0].fragments))
         print("Fragments missing       : " + str(len(self.reconstruct)))
         print("Time queued             : " + str(self.time_queued))
