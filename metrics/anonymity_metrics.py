@@ -54,7 +54,7 @@ def getUnlinkability(data):
 def computeE2ELatency(df):
 	travelTime = []
 	for i, r in df.iterrows():
-	    timeSent = r['PacketTimeSent']
-	    timeDelivered = r['PacketTimeDelivered']
-	    travelTime.append(timeDelivered - timeSent)
+		timeSent = r['PacketTimeSent']
+		timeDelivered = r['PacketTimeDelivered']
+		travelTime.append(timeDelivered - timeSent)
 	return np.mean(travelTime)
