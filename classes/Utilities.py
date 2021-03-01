@@ -1,10 +1,8 @@
-import string
 from binascii import hexlify
 from os import urandom
+from math import ceil
 import logging
 import logging.handlers
-from experiments.Settings import *
-import json
 import numpy 
 
 
@@ -49,3 +47,12 @@ def setup_logger(logger_name, filehandler_name, capacity=50000000):
 
     logger.addHandler(memoryhandler)
     return logger
+
+
+def get_total_num_of_target_packets(conf):
+    num_target_message = int(conf["misc"]["num_target_messages"])
+    packet_size = int(conf["packet"]["packet_size"])
+    msg_size = int(conf["message"]["exact_msg_size"])
+
+    return int(num_target_message * (ceil(msg_size/packet_size)))
+
