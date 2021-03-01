@@ -1,4 +1,4 @@
-from classes.Utilities import random_string
+from classes.Utilities import random_string, get_total_num_of_target_packets
 import numpy
 
 class Packet():
@@ -36,17 +36,17 @@ class Packet():
         self.time_delivered = None
 
         # Measurements
-        self.sender_estimates = numpy.array([0.0, 0.0, 0.0]) #Other, A, B
+        self.sender_estimates = numpy.array([0.0, 0.0, 0.0]) # Other, A, B
         self.sender_estimates[self.real_sender.label] = 1.0
-        self.probability_mass = numpy.zeros(self.conf["misc"]["num_target_packets"])
+        self.probability_mass = numpy.zeros(get_total_num_of_target_packets(conf))
 
-        if self.type=="REAL":
+        if self.type == "REAL":
             self.message.reconstruct.add(self.id)
 
 
     @classmethod
     def new(cls, conf, net, dest, payload, sender, type, num, msg_id):
-        '''Method used for constructing a new Packet where
+        ''' Method used for constructing a new Packet where
         the content is defined by the client but the route is generated on the constructor.'''
 
         rand_route = net.select_random_route()
@@ -84,13 +84,14 @@ class Packet():
     def output(self):
         ''' Function prints the information about the packet'''
 
-        if not self.conf["debug"]["enabled"]:
-            return
+        #if not self.conf["debug"]["enabled"]:
+        #     return
 
         print("=====================")
         print("Packet ID              : " + str(self.id))
         print("Packet Type            : " + str(self.type))
         print("Sender                 : " + str(self.real_sender))
+        print("Destination            : " + str(self.dest))
         print("Labels                 : " + str(self.sender_estimates))
         print("Time Added to Queue    : " + str(self.time_queued))
         print("Time Sent              : " + str(self.time_sent))
