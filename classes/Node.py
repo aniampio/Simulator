@@ -1,6 +1,7 @@
-from classes.Utilities import random_string, StructuredMessage, get_exponential_delay
+from classes.Utilities import random_string, StructuredMessage, get_exponential_delay, get_total_num_of_target_packets
 import math
 import numpy as np
+import datetime
 from classes.Packet import Packet
 from classes.Message import Message
 import random
@@ -51,12 +52,14 @@ class Node(object):
         self.free_to_batch = True
 
 
+
+
     def start(self, dest):
         ''' Main client method; It sends packets out.
-        It checks if there are any new packets in the outgoing buffer.
+        It checks if there are any new packets in the outgoing queue.
         If it finds any, it sends the first of them.
-        If none are found, the client sends out a dummy
-        packet (i.e., cover loop packet).
+        If none are found, the client may sent out a dummy
+        packet (i.e., cover traffic) depending on the mixnet settings.
         '''
 
         delays = []
@@ -69,11 +72,12 @@ class Node(object):
                 delay = delays.pop()
                 yield self.env.timeout(float(delay))
 
-                if len(self.pkt_buffer_out) > 0: #If there is a packet to be send
+                if len(self.pkt_buffer_out) > 0: # If there is a packet to be send
                     tmp_pkt = self.pkt_buffer_out.pop(0)
                     self.send_packet(tmp_pkt)
                     self.env.total_messages_sent += 1
 
+                # Send dummy packet when the packet buffer is empty (currently we don't send dummies during the cooldown phase)
                 else:
                     tmp_pkt = Packet.dummy(conf=self.conf, net=self.net, dest=self, sender=self)  # sender_estimates[sender.label] = 1.0
                     tmp_pkt.time_queued = self.env.now
@@ -83,7 +87,7 @@ class Node(object):
                 break
 
 
-    def start_loop_cover_traffc(self):
+    def start_loop_cover_traffic(self):
         ''' Function responsible for managing the independent Poisson stream
             of loop cover traffic.
         '''

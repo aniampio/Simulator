@@ -59,15 +59,15 @@ def run_p2p(env, conf, net, loggers):
 
     for c in peers:
         env.process(c.start(random.choice(peers)))
-        env.process(c.start_loop_cover_traffc())
+        env.process(c.start_loop_cover_traffic())
 
     env.process(SenderT1.start(dest=random.choice(peers)))
-    env.process(SenderT1.start_loop_cover_traffc())
+    env.process(SenderT1.start_loop_cover_traffic())
     env.process(SenderT2.start(dest=random.choice(peers)))
-    env.process(SenderT2.start_loop_cover_traffc())
+    env.process(SenderT2.start_loop_cover_traffic())
     env.process(recipient.set_start_logs())
     env.process(recipient.start(dest=random.choice(peers)))
-    env.process(recipient.start_loop_cover_traffc())
+    env.process(recipient.start_loop_cover_traffic())
 
     print("---------" + str(datetime.datetime.now()) + "---------")
     print("> Running the system for %s ticks to prepare it for measurment." % (conf["phases"]["burnin"]))
@@ -142,15 +142,15 @@ def run_client_server(env, conf, net, loggers):
     for c in clients:
         c.verbose = True
         env.process(c.start(random.choice(clients)))
-        env.process(c.start_loop_cover_traffc())
+        env.process(c.start_loop_cover_traffic())
 
     env.process(SenderT1.start(dest=recipient))
-    env.process(SenderT1.start_loop_cover_traffc())
+    env.process(SenderT1.start_loop_cover_traffic())
     env.process(SenderT2.start(dest=random.choice(clients)))
-    env.process(SenderT2.start_loop_cover_traffc())
+    env.process(SenderT2.start_loop_cover_traffic())
     env.process(recipient.set_start_logs())
     env.process(recipient.start(dest=random.choice(clients)))
-    env.process(recipient.start_loop_cover_traffc())
+    env.process(recipient.start_loop_cover_traffic())
 
     print("---------" + str(datetime.datetime.now()) + "---------")
     print("> Running the system for %s ticks to prepare it for measurment." % (conf["phases"]["burnin"]))
