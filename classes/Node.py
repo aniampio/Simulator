@@ -113,6 +113,7 @@ class Node(object):
 
     def send_packet(self, packet):
         ''' Methods sends a packet into the network,
+        adds it to the ack waiting-list,
          and logs information about the sending.
 ​
             Keyword arguments:
@@ -139,7 +140,7 @@ class Node(object):
         for pktid in batch:
             if pktid in self.pool.keys():
                 pkt = self.pool[pktid]
-                yield self.env.timeout(0.000386) # add some delay for packet cryptographinc processing
+                yield self.env.timeout(0.000386) # add some delay for packet processing
                 self.forward_packet(pkt)
         self.free_to_batch = True
         return
@@ -147,10 +148,10 @@ class Node(object):
 
 
     def process_packet(self, packet):
-        ''' Function performs processing of the given packet and logs information
-            about it and forwards it to the next destionation.
+        '''' Function performs processing of the given packet and logs information
+            about it and forwards it to the next destination.
             While processing the packet, the function also calculates the probability
-            that the given packet comes from a particular sender (target sender).
+            that the given packet has a specific sender label.
 
             Keyword arguments:
             packet - the packet which should be processed.
@@ -169,7 +170,7 @@ class Node(object):
             else:
 
                 delay = get_exponential_delay(self.avg_delay) if self.avg_delay != 0.0 else 0.0
-                wait = delay + 0.000386 # add the time of processing the Sphinx packet (benchmarked using our Sphinx rust implementation).
+                wait = delay + 0.000386  # add the time of processing the Sphinx packet.
                 yield self.env.timeout(wait)
 
                 if not packet.dropped: # It may get dropped if pool gets full, while waiting
@@ -203,12 +204,14 @@ class Node(object):
             if msg.complete_receiving:
                 msg_transit_time = (msg.time_delivered - msg.time_sent)
                 if self.conf["logging"]["enabled"] and self.message_logger is not None and self.start_logs:
-                    self.message_logger.info(StructuredMessage(metadata=("RCV_MSG", self.env.now, self.id, msg.id, len(msg.pkts), msg.time_queued, msg.time_sent, msg.time_delivered, msg_transit_time, len(msg.payload), msg.real_sender.label)))
+                    self.message_logger.info(StructuredMessage(metadata=(
+                    "RCV_MSG", self.env.now, self.id, msg.id, len(msg.pkts), msg.time_queued, msg.time_sent,
+                    msg.time_delivered, msg_transit_time, len(msg.payload), msg.real_sender.label)))
                 self.env.message_ctr -= 1
 
                 # this part is used to stop the simulator at a time when all sent packets got delivered!
-                if self.env.finished == True and self.env.message_ctr <= 0:
-                  print('> The stop simulation condition happend.')
+                if self.env.finished and self.env.message_ctr <= 0:
+                  print('> The stop simulation condition happened.')
                   self.env.stop_sim_event.succeed()
 
         elif packet.type == "DUMMY":
@@ -220,18 +223,18 @@ class Node(object):
         yield  # self.env.timeout(0.0)
 
     def forward_packet(self, packet):
-        if not self.probability_mass is None:
+        if self.probability_mass is not None:
             packet.probability_mass = self.probability_mass.copy()
-        if not self.sender_estimates is None:
+        if self.sender_estimates is not None:
             packet.sender_estimates = self.sender_estimates.copy()
 
-        #If it has been dropped in the meantime, we just skip sending it.
+        # If it has been dropped in the meantime, we just skip sending it.
         try:
             self.pool.pop(packet.id)
         except Exception as e:
             pass
 
-        # If the pool dries out, then we start measurments from scratch
+        # If the pool dries out, then we start measurements from scratch
         if len(self.pool) == 0:
             self.sender_estimates = None
             self.probability_mass = None
@@ -275,40 +278,43 @@ class Node(object):
             self.probability_mass = dist_pm.copy()
             self.sender_estimates = dist_se.copy()
 
+        def simulate_real_traffic(self, dest):
+            #  This function is used in the test mode
+            ''' This method generates the actual messages for which we compute the entropy.
+                The rate at which we generate this traffic is defined by rate_generating variable in
+                the config file.
+    ​
+                Keyword arguments:
+                dest - the destination of the message.
+            '''
+            i = 0
+            m = 0
+            total_num_target_packets = get_total_num_of_target_packets(self.conf)
+            print("> Simulating real traffic for {} messages of {} bytes split into {} packets of {} bytes.".format(
+                self.conf["misc"]["num_target_messages"], self.conf["message"]["exact_msg_size"],
+                total_num_target_packets, self.conf["packet"]["packet_size"]))
+            while m < self.conf["misc"]["num_target_messages"]:
 
-    def set_start_logs(self, time=0.0):
-        yield self.env.timeout(time)
-        self.start_logs = True
-        if self.verbose:
-            print("> Logs set on for Client %s." % self.id)
+                yield self.env.timeout(float(self.rate_generating))
 
+                msg = Message.random(conf=self.conf, net=self.net, sender=self, dest=dest)  # New Message
+                current_time = self.env.now
+                msg.time_queued = current_time  # The time when the message was created and placed into the queue
+                for pkt in msg.pkts:
+                    pkt.time_queued = current_time
+                    pkt.probability_mass[i] = 1.0
+                    i += 1
+                self.add_to_buffer(msg.pkts)
+                self.env.message_ctr += 1
+                m += 1
 
-    def simulate_adding_packets_into_buffer(self, dest):
-        #  This function is used in the test mode
-        ''' This method generates the actual 'real' messages for which we compute the entropy.
-            The rate at which we generate this traffic is defined by rate_generating variable in
-            the config file.
-​
-            Keyword arguments:
-            dest - the destination of the message.
-        '''
-        i = 0
+                print(
+                    "[{}/{}] New message sent to recipient at tick {} ({}). Message Size: {} bytes (= {} packets)".format(
+                        m, self.conf["misc"]["num_target_messages"], self.env.now,
+                        datetime.datetime.now().strftime("%H:%M:%S"), msg.byte_size / 2, len(msg.pkts)))
 
-        # Note: if you want to send messages or larger size than a single packet this function must be updated
-        while i < self.conf["misc"]["num_target_packets"]:
-
-            yield self.env.timeout(float(self.rate_generating))
-
-            msg = Message.random(conf=self.conf, net=self.net, sender=self, dest=dest)  # New Message
-            current_time = self.env.now
-            msg.time_queued = current_time  # The time when the message was created and placed into the queue
-            for pkt in msg.pkts:
-                pkt.time_queued = current_time
-                pkt.probability_mass[i] = 1.0
-            self.add_to_buffer(msg.pkts)
-            self.env.message_ctr += 1
-            i += 1
-        self.env.finished = True
+            print("All messages have been sent. Waiting to receive them all.")
+            self.env.finished = True
 
 
     def terminate(self, delay=0.0):
