@@ -223,7 +223,7 @@ def check_progress(env, max_tick):
     last_value = -1
     while env.now <= max_tick:
         if env.now != last_value:
-            print("tick: {}/{} at {}".format(env.now, max_tick, datetime.datetime.now().strftime("%H:%M:%S")))
+            print("tick: {}/{} at {}".format(int(env.now), int(max_tick), datetime.datetime.now().strftime("%H:%M:%S")))
             last_value = env.now
             yield env.timeout(1)
 
