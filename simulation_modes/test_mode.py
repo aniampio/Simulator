@@ -158,7 +158,7 @@ def run_client_server(env, conf, net, loggers):
     print("---------" + str(datetime.datetime.now()) + "---------")
     print("> Running the system for %s ticks to prepare it for measurement." % (conf["phases"]["burnin"]))
 
-    env.process(check_progress(env, conf["phases"]["burnin"]))
+    # env.process(check_progress(env, conf["phases"]["burnin"]))
 
     # env.process(progress_update(env, 5))
     time_started = env.now
@@ -190,7 +190,7 @@ def run_client_server(env, conf, net, loggers):
     # Log entropy
     loggers[2].info(StructuredMessage(metadata=tuple(env.entropy)))
     # ------ RUNNING THE COOLDOWN PHASE ----------
-    env.process(check_progress(env, env.now + conf["phases"]["cooldown"]))
+    # env.process(check_progress(env, env.now + conf["phases"]["cooldown"]))
     env.run(until=env.now + conf["phases"]["cooldown"])
 
     # Log entropy

@@ -49,12 +49,3 @@ def getUnlinkability(data):
 		meanEps = np.mean(epsilon)
 	delta = float(dlts) / float(len(est_senderA))
 	return (meanEps, delta)
-
-
-def computeE2ELatency(df):
-	travelTime = []
-	for i, r in df.iterrows():
-		timeSent = r['PacketTimeSent']
-		timeDelivered = r['PacketTimeDelivered']
-		travelTime.append(timeDelivered - timeSent)
-	return np.mean(travelTime)

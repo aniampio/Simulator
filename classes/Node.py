@@ -34,10 +34,10 @@ class Node(object):
         #State
         self.alive = True
 
-        self.rate_sending = 1.0/float(self.conf["clients"]["rate_sending"])
-        self.rate_generating = float(self.conf["clients"]["sim_add_buffer"]) # this specifies how often we put a real message into a buffer
+        self.packet_stream_average_delay = float(self.conf["clients"]["packet_stream_average_delay"])
+        self.traffic_gen_average_delay = float(self.conf["clients"]["traffic_gen_average_delay"]) # this specifies how often we put a real message into a buffer
         self.cover_traffic = self.conf["clients"]["cover_traffic"]
-        self.cover_traffic_rate = 1.0/float(self.conf["clients"]["cover_traffic_rate"])
+        self.cover_stream_average_delay = float(self.conf["clients"]["cover_stream_average_delay"])
 
         self.verbose = False
         self.pkt_buffer_out = []
@@ -67,7 +67,7 @@ class Node(object):
         while True:
             if self.alive:
                 if delays == []:
-                    delays = list(np.random.exponential(self.rate_sending, 10000))
+                    delays = list(np.random.exponential(self.packet_stream_average_delay, 10000))
 
                 delay = delays.pop()
                 yield self.env.timeout(float(delay))
@@ -97,7 +97,7 @@ class Node(object):
             while True:
                 if self.alive:
                     if delays == []:
-                        delays = list(np.random.exponential(self.cover_traffic_rate, 10000))
+                        delays = list(np.random.exponential(self.cover_stream_average_delay, 10000))
 
                     delay = delays.pop()
                     yield self.env.timeout(float(delay))
@@ -303,7 +303,7 @@ class Node(object):
             total_num_target_packets, self.conf["packet"]["packet_size"]))
 
         while m < self.conf["misc"]["num_target_messages"]:
-            yield self.env.timeout(float(self.rate_generating))
+            yield self.env.timeout(float(self.traffic_gen_average_delay))
 
             msg = Message.random(conf=self.conf, net=self.net, sender=self, dest=dest)  # New Message
             current_time = self.env.now
@@ -317,7 +317,7 @@ class Node(object):
             m += 1
 
             print(
-                "[{}/{}] New message sent to recipient at tick {} ({}). Message Size: {} bytes (= {} packets)".format(
+                "[{}/{}] New message added to buffer at tick {} ({}). Message Size: {} bytes (= {} packets)".format(
                     m, self.conf["misc"]["num_target_messages"], self.env.now,
                     datetime.datetime.now().strftime("%H:%M:%S"), msg.byte_size / 2, len(msg.pkts)))
 
