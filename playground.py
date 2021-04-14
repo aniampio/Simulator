@@ -59,9 +59,9 @@ if __name__ == "__main__":
     print("-------- Anonymity metrics --------")
     print(">>> Entropy: ", entropy)
     if unlinkability[0] == None:
-        print(">>> E2E Unlinkability: epsilon= -, delta=%f)" % unlinkability[1])
+        print(">>> E2E Unlinkability: epsilon= -, stdEps= -, delta=%f)" % unlinkability[1])
     else:
-        print(">>> E2E Unlinkability: (epsilon=%f, delta=%f)" % unlinkability)
+        print(">>> E2E Unlinkability: (epsilon=%f, stdEps=%f, delta=%f)" % unlinkability)
 
     print("\n\n")
     print("-------- Setup --------")

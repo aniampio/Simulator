@@ -38,6 +38,7 @@ class Packet():
         # Measurements
         self.sender_estimates = numpy.array([0.0, 0.0, 0.0]) # Other, A, B
         self.sender_estimates[self.real_sender.label] = 1.0
+        # self.sender_estimates = numpy.asarray([[0.0, 0.0, 0.0] for i in range(get_total_num_of_target_packets(conf))]) # Other, A, B
         self.probability_mass = numpy.zeros(get_total_num_of_target_packets(conf))
 
         if self.type == "REAL":

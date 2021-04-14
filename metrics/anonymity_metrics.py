@@ -44,8 +44,11 @@ def getUnlinkability(data):
 				dlts += 1
 		else:
 			pass
-	meanEps = None
-	if epsilon != []:
-		meanEps = np.mean(epsilon)
+
+	print("EPSs: ", epsilon)
+	print("Delta: ", dlts)
+	meanEps = np.abs(np.mean(epsilon)) if epsilon != [] else None
+	stdEps = np.std(epsilon) if epsilon != [] else None
 	delta = float(dlts) / float(len(est_senderA))
-	return (meanEps, delta)
+
+	return (meanEps, stdEps, delta)

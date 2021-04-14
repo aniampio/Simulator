@@ -267,8 +267,8 @@ class Node(object):
             self.probability_mass = packet.probability_mass.copy()
             self.sender_estimates = packet.sender_estimates.copy()
         else:
-            dist_pm = self.probability_mass * len(self.pool) + packet.probability_mass
-            dist_se = self.sender_estimates * len(self.pool) + packet.sender_estimates
+            dist_pm = self.probability_mass * len(self.pool) + packet.probability_mass.copy()
+            dist_se = self.sender_estimates * len(self.pool) + packet.sender_estimates.copy()
 
             self.pool[packet.id] = packet  # Add Packet in Pool
 
@@ -311,6 +311,7 @@ class Node(object):
             for pkt in msg.pkts:
                 pkt.time_queued = current_time
                 pkt.probability_mass[i] = 1.0
+                # pkt.sender_estimates[i][self.label] = 1.0
                 i += 1
             self.add_to_buffer(msg.pkts)
             self.env.message_ctr += 1

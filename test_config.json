@@ -9,7 +9,7 @@
     "phases":   {
         "burnin": 100,
         "execution": 500,
-        "cooldown": 1000},
+        "cooldown": 2000},
     "network": {
         "topology" : "stratified",
         "cascade" : {
@@ -17,7 +17,7 @@
           "num_gateways": 0},
         "stratified" : {
           "layers": 3,
-          "layer_size": 2,
+          "layer_size": 3,
           "num_gateways": 2
         },
         "multi_cascade" : {
@@ -33,16 +33,16 @@
     "message": {
         "min_msg_size": 1,
         "max_msg_size": 1,
-        "exact_msg_size": 2},
+        "exact_msg_size": 1},
     "mixnodes": {
-			"avg_delay": 0.1,
+			"avg_delay": 0.5,
       "batch": false,
       "batch_size" : 1000,
 			"AQM":false},
     "clients": {
         "number":100,
         "traffic_gen_average_delay": 1.0,
-        "packet_stream_average_delay": 0.1,
+        "packet_stream_average_delay": 0.5,
         "rate_ack": 0.5,
         "cover_traffic": false,
         "cover_stream_average_delay":50.0,
@@ -52,5 +52,5 @@
         "max_retransmissions":5},
     "misc": {
         "id_len": 32,
-        "num_target_messages": 10}
+        "num_target_messages": 1}
 }
