@@ -311,7 +311,6 @@ class Node(object):
             for pkt in msg.pkts:
                 pkt.time_queued = current_time
                 pkt.probability_mass[i] = 1.0
-                # pkt.sender_estimates[i][self.label] = 1.0
                 i += 1
             self.add_to_buffer(msg.pkts)
             self.env.message_ctr += 1

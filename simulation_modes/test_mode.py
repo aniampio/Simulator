@@ -64,6 +64,7 @@ def run_p2p(env, conf, net, loggers):
         env.process(c.start(random.choice(peers)))
         env.process(c.start_loop_cover_traffic())
 
+
     env.process(SenderT1.start(dest=random.choice(peers)))
     env.process(SenderT1.start_loop_cover_traffic())
     env.process(SenderT2.start(dest=random.choice(peers)))
@@ -148,9 +149,10 @@ def run_client_server(env, conf, net, loggers):
         env.process(c.start_loop_cover_traffic())
 
     env.process(SenderT1.start(dest=recipient))
-    env.process(SenderT1.start_loop_cover_traffic())
     env.process(SenderT2.start(dest=random.choice(clients)))
+    env.process(SenderT1.start_loop_cover_traffic())
     env.process(SenderT2.start_loop_cover_traffic())
+
     env.process(recipient.set_start_logs())
     env.process(recipient.start(dest=random.choice(clients)))
     env.process(recipient.start_loop_cover_traffic())
@@ -173,6 +175,8 @@ def run_client_server(env, conf, net, loggers):
         p.mixlogging = True
 
     env.process(SenderT1.simulate_real_traffic(recipient))
+    env.process(SenderT2.simulate_real_traffic(recipient))
+
     real_time_started_measurements = round(time.time())
     tick_time_started_measurements = env.now
     print("> Started sending traffic for measurements (sim tick {})".format(tick_time_started_measurements))
@@ -185,10 +189,8 @@ def run_client_server(env, conf, net, loggers):
     print("> Total measurements time: {} minutes.".format(total_real_time_measurements/60))
     print("> Total measurements in ticks: {}.".format(total_tick_time_measurements))
     print("> Main part of simulation finished at tick {}. Starting cooldown phase.".format(tick_time_ended_measurements))
-    end_cooldown_time = (conf["phases"]["cooldown"]/total_tick_time_measurements)*total_real_time_measurements
 
-    # Log entropy
-    loggers[2].info(StructuredMessage(metadata=tuple(env.entropy)))
+
     # ------ RUNNING THE COOLDOWN PHASE ----------
     # env.process(check_progress(env, env.now + conf["phases"]["cooldown"]))
     env.run(until=env.now + conf["phases"]["cooldown"])

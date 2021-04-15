@@ -6,6 +6,8 @@ from classes.Utilities import get_total_num_of_target_packets
 import pandas as pd
 import shutil
 import json
+import pickle
+from datetime import datetime
 
 if __name__ == "__main__":
 
@@ -86,6 +88,27 @@ if __name__ == "__main__":
     print(">> Throughput [packets/time] of the network: {:.3f} [packets/s]".format(pps))
     print(">> Throughput [bytes/time] of the network: {:.3f} [kB/s]".format(throughput / 1000))
     print("-------------------------------------------------------")
+
+    exp_timestamp = datetime.now()
+    total_results = [{'Experiment Time':exp_timestamp.strftime("%d/%m/%Y %H:%M:%S") ,
+        'Experimental Setup':config,
+        'Experiment results': {
+            'unlinkability' : unlinkability,
+            'entropy' : entropy,
+            'throughput':throughput,
+            'latency_per_packet':latency_per_packet,
+            'packet_queuing_time':packet_queuing_time,
+            'transit_latency_per_message':transit_latency_per_message,
+            'sending_latency_per_message':sending_latency_per_message,
+            'message_queuing_time':message_queuing_time}
+        }]
+
+    if os.path.exists("./total_results.pkl"):
+        l = pickle.load(open("total_results.pkl", "rb"))
+        l.append(total_results)
+        pickle.dump(l, open('total_results.pkl', 'wb'))
+    else:
+        pickle.dump(total_results, open('total_results.pkl', 'wb'))
 
 # except Exception as e:
 # print(e)
