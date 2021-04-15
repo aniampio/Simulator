@@ -8,10 +8,14 @@ import shutil
 import json
 import pickle
 from datetime import datetime
+import argparse
 
-if __name__ == "__main__":
+def run(edir=None):
 
-    # try:
+    if edir:
+        experiment_dir = edir
+    else:
+        experiment_dir = './playground_experiment/'
 
     print("Mix-network Simulator\n")
     print("Insert the following network parameters to test: ")
@@ -19,22 +23,22 @@ if __name__ == "__main__":
     with open('test_config.json') as json_file:
         config = json.load(json_file)
 
-    if not os.path.exists('./playground_experiment/logs'):
-        os.makedirs('./playground_experiment/logs')
+    if not os.path.exists(os.path.join(experiment_dir, 'logs')):
+        os.makedirs(os.path.join(experiment_dir, 'logs'))
     else:
         try:
-            os.remove('./playground_experiment/logs/packet_log.csv')
-            os.remove('./playground_experiment/logs/message_log.csv')
-            os.remove('./playground_experiment/logs/last_mix_entropy.csv')
+            os.remove(os.path.join(experiment_dir, 'logs/packet_log.csv'))
+            os.remove(os.path.join(experiment_dir, 'logs/message_log.csv'))
+            os.remove(os.path.join(experiment_dir, 'logs/last_mix_entropy.csv'))
         except:
             pass
 
-    test_mode.run(exp_dir='playground_experiment', conf_file=None, conf_dic=config)
+    test_mode.run(exp_dir=experiment_dir, conf_file=None, conf_dic=config)
     pps = test_mode.throughput
 
-    packetLogsDir = './playground_experiment/logs/packet_log.csv'
-    messageLogsDir = './playground_experiment/logs/message_log.csv'
-    entropyLogsDir = './playground_experiment/logs/last_mix_entropy.csv'
+    packetLogsDir = os.path.join(experiment_dir, 'logs/packet_log.csv')
+    messageLogsDir = os.path.join(experiment_dir, 'logs/message_log.csv')
+    entropyLogsDir = os.path.join(experiment_dir, 'logs/last_mix_entropy.csv')
     packetLogs = pd.read_csv(packetLogsDir, delimiter=';')
     messageLogs = pd.read_csv(messageLogsDir, delimiter=';')
     entropyLogs = pd.read_csv(entropyLogsDir, delimiter=';')
@@ -109,6 +113,15 @@ if __name__ == "__main__":
         pickle.dump(l, open('total_results.pkl', 'wb'))
     else:
         pickle.dump(total_results, open('total_results.pkl', 'wb'))
+
+
+
+if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-edir", help="The directory of the experiment output")
+    args = parser.parse_args()
+    run(args.edir)
 
 # except Exception as e:
 # print(e)

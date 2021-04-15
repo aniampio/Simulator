@@ -13,12 +13,6 @@ def getEntropy(data, num_target_packets):
 		entropies.append(dist)
 	return np.mean(entropies)
 
-# def getEntropy(data):
-# 	tmp = data[data["Type"] == "ENTROPY"]
-# 	entropy = np.mean(tmp["Entropy"].tolist())
-# 	return entropy
-
-
 
 def getUnlinkability(data):
 	epsilon = []
