@@ -42,7 +42,7 @@
     "clients": {
         "number":100,
         "traffic_gen_average_delay": 1.0,
-        "packet_stream_average_delay": 0.5,
+        "packet_stream_average_delay": 1.0,
         "rate_ack": 0.5,
         "cover_traffic": false,
         "cover_stream_average_delay":50.0,
