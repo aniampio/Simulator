@@ -53,22 +53,33 @@ def run_p2p(env, conf, net, loggers):
     SenderT1 = peers.pop()
     SenderT1.label = 1
     SenderT1.verbose = True
+    print("Target Sender1: ", SenderT1.id)
 
     SenderT2 = peers.pop()
     SenderT2.label = 2
     SenderT2.verbose = True
+    print("Target Sender2: ", SenderT2.id)
 
     recipient = peers.pop()
+    print("Target Recipient: ", recipient.id)
 
     for c in peers:
         env.process(c.start(random.choice(peers)))
         env.process(c.start_loop_cover_traffic())
 
 
-    env.process(SenderT1.start(dest=random.choice(peers)))
+    chbit = bool(random.getrandbits(1))
+    print(">> Challenge bit: ", chbit)
+    if chbit:
+        env.process(SenderT1.start(dest=recipient))
+        env.process(SenderT2.start(dest=random.choice(peers)))
+    else:
+        env.process(SenderT1.start(dest=random.choice(peers)))
+        env.process(SenderT2.start(dest=recipient))
+
     env.process(SenderT1.start_loop_cover_traffic())
-    env.process(SenderT2.start(dest=random.choice(peers)))
     env.process(SenderT2.start_loop_cover_traffic())
+
     env.process(recipient.set_start_logs())
     env.process(recipient.start(dest=random.choice(peers)))
     env.process(recipient.start_loop_cover_traffic())
@@ -88,7 +99,10 @@ def run_p2p(env, conf, net, loggers):
     for p in net.peers:
         p.mixlogging = True
 
-    env.process(SenderT1.simulate_real_traffic(recipient))
+    if chbit:
+        env.process(SenderT1.simulate_real_traffic(recipient))
+    else:
+        env.process(SenderT2.simulate_real_traffic(recipient))
     print("> Started sending traffic for measurements")
 
     env.run(until=env.stop_sim_event)  # Run until the stop_sim_event is triggered.
@@ -148,10 +162,17 @@ def run_client_server(env, conf, net, loggers):
         env.process(c.start(random.choice(clients)))
         env.process(c.start_loop_cover_traffic())
 
-    env.process(SenderT1.start(dest=recipient))
-    env.process(SenderT2.start(dest=random.choice(clients)))
+    chbit = bool(random.getrandbits(1))
+    print(">> Challenge bit: ", chbit)
+    if chbit:
+        env.process(SenderT1.start(dest=recipient))
+        env.process(SenderT2.start(dest=random.choice(clients)))
+    else:
+        env.process(SenderT1.start(dest=random.choice(clients)))
+        env.process(SenderT2.start(dest=recipient))
     env.process(SenderT1.start_loop_cover_traffic())
     env.process(SenderT2.start_loop_cover_traffic())
+
 
     env.process(recipient.set_start_logs())
     env.process(recipient.start(dest=random.choice(clients)))
@@ -174,8 +195,10 @@ def run_client_server(env, conf, net, loggers):
     for p in net.mixnodes:
         p.mixlogging = True
 
-    env.process(SenderT1.simulate_real_traffic(recipient))
-    env.process(SenderT2.simulate_real_traffic(recipient))
+    if chbit:
+        env.process(SenderT1.simulate_real_traffic(recipient))
+    else:
+        env.process(SenderT2.simulate_real_traffic(recipient))
 
     real_time_started_measurements = round(time.time())
     tick_time_started_measurements = env.now
