@@ -50,6 +50,7 @@ class Node(object):
         self.start_logs = False
         self.batch_num = 0
         self.free_to_batch = True
+        self.nsent = 0
 
 
 
@@ -76,6 +77,7 @@ class Node(object):
                     tmp_pkt = self.pkt_buffer_out.pop(0)
                     self.send_packet(tmp_pkt)
                     self.env.total_messages_sent += 1
+                    self.nsent += 1
 
                 # Send dummy packet when the packet buffer is empty (currently we don't send dummies during the cooldown phase)
                 else:
@@ -83,6 +85,7 @@ class Node(object):
                     tmp_pkt.time_queued = self.env.now
                     self.send_packet(tmp_pkt)
                     self.env.total_messages_sent += 1
+                    self.nsent += 1
             else:
                 break
 
