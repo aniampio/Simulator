@@ -18,7 +18,7 @@ def run(edir=None):
         experiment_dir = './playground_experiment/'
 
     print("Mix-network Simulator\n")
-    print("Insert the following network parameters to test: ")
+    # print("Insert the following network parameters to test: ")
 
     with open('test_config.json') as json_file:
         config = json.load(json_file)
@@ -113,7 +113,7 @@ def run(edir=None):
     #     pickle.dump(l, open('total_results.pkl', 'wb'))
     # else:
     #     pickle.dump(total_results, open('total_results.pkl', 'wb'))
-
+    return
 
 
 if __name__ == "__main__":

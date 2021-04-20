@@ -7,8 +7,8 @@
         "client_log": "client_log.json",
         "mix_log": "mix_log.json"},
     "phases":   {
-        "burnin": 100,
-        "execution": 500,
+        "burnin": 2000,
+        "execution": 1000,
         "cooldown": 2000},
     "network": {
         "topology" : "stratified",
