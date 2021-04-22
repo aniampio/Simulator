@@ -27,6 +27,8 @@ def getUnlinkability(data):
 				ratio = float(prA) / float(prB)
 				if not ratio == 0.0:
 					epsilon.append(math.log(ratio))
+				else:
+					dlts += 1
 			else:
 				dlts += 1
 		elif label == 2:
@@ -34,6 +36,8 @@ def getUnlinkability(data):
 				ratio = float(prB) / float(prA)
 				if not ratio == 0.0:
 					epsilon.append(math.log(ratio))
+				else:
+					dlts += 1
 			else:
 				dlts += 1
 		else:
