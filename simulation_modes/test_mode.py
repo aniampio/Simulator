@@ -278,6 +278,7 @@ def run(exp_dir, conf_file=None, conf_dic=None):
 
     # Logging directory
     log_dir = os.path.join(exp_dir,conf["logging"]["dir"])
+    experiments.Settings.saveconfig(conf, exp_dir)
     # Setup environment
     env = setup_env(conf)
 

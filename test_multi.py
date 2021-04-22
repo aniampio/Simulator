@@ -8,8 +8,16 @@ def run(edir):
 
 
 if __name__ == "__main__":
-    nprocesses = 8
-    reps = 7
+
+    # Kill previously running ones in case left somewhere
+    os.system('pkill -9 -f test_multip.py')
+    os.system('pkill -9 -f playground.py')
+
+    # Remove the existing directories
+    os.system('rm -r expdir_*')
+
+    nprocesses = 10
+    reps = 3
 
     if nprocesses <= reps:
         raise Exception('More reps than processes. Carefull, this might end up not well.')
@@ -18,6 +26,8 @@ if __name__ == "__main__":
 
     dirs = []
     for i in range(0, reps):
-        dirs.append('expdir_%d' % i)
+        d = 'expdir_%d' % i
+        dirs.append(d)
+
 
     pool.map(run, dirs)
