@@ -26,7 +26,8 @@ def getUnlinkability(data):
 			if not float(prB) == 0.0:
 				ratio = float(prA) / float(prB)
 				if not ratio == 0.0:
-					epsilon.append(math.log(ratio))
+					lratio = math.log(ratio)
+					epsilon.append(lratio)
 				else:
 					dlts += 1
 			else:
@@ -35,7 +36,8 @@ def getUnlinkability(data):
 			if not float(prA) == 0.0:
 				ratio = float(prB) / float(prA)
 				if not ratio == 0.0:
-					epsilon.append(math.log(ratio))
+					lratio = math.log(ratio)
+					epsilon.append(lratio)
 				else:
 					dlts += 1
 			else:

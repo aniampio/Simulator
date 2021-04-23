@@ -34,11 +34,10 @@ def setup_env(conf):
     env = simpy.Environment()
     env.stop_sim_event = env.event()
     env.stop_cool_down_event = env.event()
-    env.message_ctr = 0
+    env.target_message_ctr = 0
     env.total_messages_sent = 0
     env.total_messages_received = 0
     env.finished = False
-    #env.entropy = numpy.zeros(int(conf["misc"]["num_target_messages"]))
     env.entropy = numpy.zeros(get_total_num_of_target_packets(conf))
 
     return env
@@ -69,7 +68,7 @@ def run_p2p(env, conf, net, loggers):
 
 
     chbit = bool(random.getrandbits(1))
-    print(">> Challenge bit: ", chbit)
+    print(">> Challenge bit: ", int(chbit))
     if chbit:
         env.process(SenderT1.start(dest=recipient))
         env.process(SenderT2.start(dest=random.choice(peers)))
@@ -139,21 +138,21 @@ def run_p2p(env, conf, net, loggers):
 
 def run_client_server(env, conf, net, loggers):
     clients = net.clients
-    print("Number of active clients: ", len(clients))
+    print("> Number of active clients: ", len(clients))
 
     SenderT1 = clients.pop()
     SenderT1.label = 1
     SenderT1.verbose = True
-    print("Target Sender1: ", SenderT1.id)
+    print("> Target Sender1: ", SenderT1.id)
 
     SenderT2 = clients.pop()
     SenderT2.label = 2
     SenderT2.verbose = True
-    print("Target Sender2: ", SenderT2.id)
+    print("> Target Sender2: ", SenderT2.id)
 
     recipient = clients.pop()
     recipient.verbose = True
-    print("Target Recipient: ", recipient.id)
+    print("> Target Recipient: ", recipient.id)
 
     net.mixnodes[0].verbose = True
 
@@ -163,13 +162,16 @@ def run_client_server(env, conf, net, loggers):
         env.process(c.start_loop_cover_traffic())
 
     chbit = bool(random.getrandbits(1))
-    print(">> Challenge bit: ", chbit)
-    if chbit:
+    print(">> Challenge bit: ", int(chbit))
+    if chbit == 0:
+        SenderT1.target = True
         env.process(SenderT1.start(dest=recipient))
         env.process(SenderT2.start(dest=random.choice(clients)))
     else:
+        SenderT2.target = True
         env.process(SenderT1.start(dest=random.choice(clients)))
         env.process(SenderT2.start(dest=recipient))
+
     env.process(SenderT1.start_loop_cover_traffic())
     env.process(SenderT2.start_loop_cover_traffic())
 
@@ -195,9 +197,11 @@ def run_client_server(env, conf, net, loggers):
     for p in net.mixnodes:
         p.mixlogging = True
 
-    if chbit:
+    if chbit == 0:
         env.process(SenderT1.simulate_real_traffic(recipient))
+        env.process(SenderT2.simulate_real_traffic(random.choice(clients)))
     else:
+        env.process(SenderT1.simulate_real_traffic(random.choice(clients)))
         env.process(SenderT2.simulate_real_traffic(recipient))
 
     real_time_started_measurements = round(time.time())
@@ -242,6 +246,9 @@ def run_client_server(env, conf, net, loggers):
     print("Total number of packets which went through the network: ", float(env.total_messages_received))
     print("Network throughput %f / second: " % throughput)
     print("Average mix throughput %f / second, with std: %f" % (np.mean(mixthroughputs), np.std(mixthroughputs)))
+
+    print(">> SenderT1: ", SenderT1.nsent)
+    print(">> SenderT2: ", SenderT2.nsent)
 
 
 def check_progress(env, max_tick):

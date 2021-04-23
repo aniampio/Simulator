@@ -10,9 +10,9 @@ from classes.Utilities import StructuredMessage, setup_logger, random_string
 import experiments.Settings
 
 class Client(Node):
-    def __init__(self, env, conf, net, loggers=None, label=0, id=None, p2p=False):
+    def __init__(self, env, conf, net, loggers=None, label=0, id=None, p2p=False, target=False):
         self.conf = conf
-        super().__init__(env=env, conf=conf, net=net, loggers=loggers, id=id)
+        super().__init__(env=env, conf=conf, net=net, loggers=loggers, id=id, target=target)
 
 
     def schedule_retransmits(self):

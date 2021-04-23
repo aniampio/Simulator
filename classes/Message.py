@@ -7,8 +7,8 @@ class Message():
     ''' This class defines an object of a Message, which is a message send between
     the sender and recipient. '''
 
-    __slots__ = ['conf', 'id', 'payload', 'real_sender', 'time_queued', 'time_sent', 'time_delivered', 'transit_time', 'reconstruct', 'complete_receiving', 'pkts', 'byte_size']
-    def __init__(self, conf, net, payload, dest, real_sender, id=None):
+    __slots__ = ['conf', 'id', 'payload', 'real_sender', 'time_queued', 'time_sent', 'time_delivered', 'transit_time', 'reconstruct', 'complete_receiving', 'pkts', 'byte_size', 'ent_target']
+    def __init__(self, conf, net, payload, dest, real_sender, id=None, ent_target=False):
 
         self.conf = conf
 
@@ -30,6 +30,9 @@ class Message():
 
         # Packets
         self.pkts = self.split_into_packets(net, dest)
+
+        # Message to measure entropy
+        self.ent_target = ent_target
 
 
 

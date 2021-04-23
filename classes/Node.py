@@ -8,7 +8,7 @@ import random
 
 class Node(object):
 
-    def __init__(self, env, conf, net=None, label=0, loggers=None, id=None):
+    def __init__(self, env, conf, net=None, label=0, loggers=None, id=None, target=False):
 
         self.env = env
         self.conf = conf
@@ -52,6 +52,7 @@ class Node(object):
         self.free_to_batch = True
         self.nsent = 0
 
+        self.target = target
 
 
 
@@ -64,11 +65,14 @@ class Node(object):
         '''
 
         delays = []
+        dummies = []
 
         while True:
             if self.alive:
                 if delays == []:
                     delays = list(np.random.exponential(self.packet_stream_average_delay, 10000))
+                if dummies == []:
+                    dummies = [Packet.dummy(conf=self.conf, net=self.net, dest=self, sender=self) for x in range(10000)]
 
                 delay = delays.pop()
                 yield self.env.timeout(float(delay))
@@ -81,11 +85,11 @@ class Node(object):
 
                 # Send dummy packet when the packet buffer is empty (currently we don't send dummies during the cooldown phase)
                 else:
-                    tmp_pkt = Packet.dummy(conf=self.conf, net=self.net, dest=self, sender=self)  # sender_estimates[sender.label] = 1.0
-                    tmp_pkt.time_queued = self.env.now
+                    # tmp_pkt = Packet.dummy(conf=self.conf, net=self.net, dest=self, sender=self)  # sender_estimates[sender.label] = 1.0
+                    # tmp_pkt.time_queued = self.env.now
+                    tmp_pkt = dummies.pop(0)
                     self.send_packet(tmp_pkt)
                     self.env.total_messages_sent += 1
-                    self.nsent += 1
             else:
                 break
 
@@ -192,7 +196,6 @@ class Node(object):
 
         packet.time_delivered = self.env.now
         self.env.total_messages_received += 1
-        # print(self.env.message_ctr)
 
         if packet.type == "REAL":
             self.num_received_packets += 1
@@ -210,12 +213,14 @@ class Node(object):
                     self.message_logger.info(StructuredMessage(metadata=(
                     "RCV_MSG", self.env.now, self.id, msg.id, len(msg.pkts), msg.time_queued, msg.time_sent,
                     msg.time_delivered, msg_transit_time, len(msg.payload), msg.real_sender.label)))
-                self.env.message_ctr -= 1
+                if msg.ent_target:
+                    self.env.target_message_ctr -= 1
 
                 # this part is used to stop the simulator at a time when all sent packets got delivered!
-                if self.env.finished and self.env.message_ctr <= 0:
-                  print('> The stop simulation condition happened.')
-                  self.env.stop_sim_event.succeed()
+                if self.env.finished and self.env.target_message_ctr <= 0:
+                    print("Entering")
+                    print('> The stop simulation condition happened.')
+                    self.env.stop_sim_event.succeed()
 
         elif packet.type == "DUMMY":
             pass
@@ -305,27 +310,53 @@ class Node(object):
             self.conf["misc"]["num_target_messages"], self.conf["message"]["exact_msg_size"],
             total_num_target_packets, self.conf["packet"]["packet_size"]))
 
-        while m < self.conf["misc"]["num_target_messages"]:
-            yield self.env.timeout(float(self.traffic_gen_average_delay))
+        if self.target:
+            while m < self.conf["misc"]["num_target_messages"]:
+                yield self.env.timeout(float(self.traffic_gen_average_delay))
 
-            msg = Message.random(conf=self.conf, net=self.net, sender=self, dest=dest)  # New Message
-            current_time = self.env.now
-            msg.time_queued = current_time  # The time when the message was created and placed into the queue
-            for pkt in msg.pkts:
-                pkt.time_queued = current_time
-                pkt.probability_mass[i] = 1.0
-                i += 1
-            self.add_to_buffer(msg.pkts)
-            self.env.message_ctr += 1
-            m += 1
+                msg = Message.random(conf=self.conf, net=self.net, sender=self, dest=dest)  # New Message
+                msg.ent_target = True
+                current_time = self.env.now
+                msg.time_queued = current_time  # The time when the message was created and placed into the queue
+                for pkt in msg.pkts:
+                    pkt.time_queued = current_time
+                    if self.target:
+                        pkt.probability_mass[i] = 1.0
+                    pkt.sender_estimates[self.label] = 1.0
+                    i += 1
+                self.add_to_buffer(msg.pkts)
+                self.env.target_message_ctr += 1
+                m += 1
 
-            print(
-                "[{}/{}] New message added to buffer at tick {} ({}). Message Size: {} bytes (= {} packets)".format(
-                    m, self.conf["misc"]["num_target_messages"], self.env.now,
-                    datetime.datetime.now().strftime("%H:%M:%S"), msg.byte_size / 2, len(msg.pkts)))
+                print(
+                    "[{}/{}] New message added to buffer at tick {} ({}) by {}. Recipient {}. Message Size: {} bytes (= {} packets)".format(
+                        m, self.conf["misc"]["num_target_messages"], self.env.now,
+                        datetime.datetime.now().strftime("%H:%M:%S"), self.id, dest, msg.byte_size / 2, len(msg.pkts)))
 
-        print("All messages have been sent. Waiting to receive them all.")
-        self.env.finished = True
+            print("All target messages have been added to the buffer. Waiting to receive them all.")
+            self.env.finished = True
+
+        else:
+            while m < self.conf["misc"]["num_target_messages"]:
+                yield self.env.timeout(float(self.traffic_gen_average_delay))
+
+                msg = Message.random(conf=self.conf, net=self.net, sender=self, dest=dest)  # New Message
+                current_time = self.env.now
+                msg.time_queued = current_time  # The time when the message was created and placed into the queue
+                for pkt in msg.pkts:
+                    pkt.time_queued = current_time
+                    pkt.sender_estimates[self.label] = 1.0
+                    i += 1
+                self.add_to_buffer(msg.pkts)
+                m += 1
+
+                print(
+                    "[{}/{}] New message added to buffer at tick {} ({}) by {}. Recipient {}. Message Size: {} bytes (= {} packets)".format(
+                        m, self.conf["misc"]["num_target_messages"], self.env.now,
+                        datetime.datetime.now().strftime("%H:%M:%S"), self.id, dest, msg.byte_size / 2, len(msg.pkts)))
+
+            print("All target messages have been added to the buffer. Waiting to receive them all.")
+
 
 
     def terminate(self, delay=0.0):
