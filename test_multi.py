@@ -4,6 +4,7 @@ import glob
 import playground as pg
 from datetime import datetime
 from shutil import rmtree
+import time
 
 
 def runSim(edir, rseed):
@@ -41,7 +42,9 @@ if __name__ == "__main__":
     seeds = [(int(currentTimestamp) + x) for x in repsSalt]
     print(">> Seeds for the RNG: ", seeds)
 
+with Pool(nprocesses) as pool:
     pool.starmap(runSim, zip(dirs, seeds))
+    time.sleep(5)
 
-    pool.close()
-    pool.join()
+pool.close()
+pool.join()
