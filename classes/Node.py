@@ -79,17 +79,17 @@ class Node(object):
 
                 if len(self.pkt_buffer_out) > 0: # If there is a packet to be send
                     tmp_pkt = self.pkt_buffer_out.pop(0)
-                    self.send_packet(tmp_pkt)
                     self.env.total_messages_sent += 1
                     self.nsent += 1
+                    self.send_packet(tmp_pkt)
 
                 # Send dummy packet when the packet buffer is empty (currently we don't send dummies during the cooldown phase)
                 else:
                     # tmp_pkt = Packet.dummy(conf=self.conf, net=self.net, dest=self, sender=self)  # sender_estimates[sender.label] = 1.0
                     # tmp_pkt.time_queued = self.env.now
                     tmp_pkt = dummies.pop(0)
-                    self.send_packet(tmp_pkt)
                     self.env.total_messages_sent += 1
+                    self.send_packet(tmp_pkt)
             else:
                 break
 
@@ -215,12 +215,11 @@ class Node(object):
                     msg.time_delivered, msg_transit_time, len(msg.payload), msg.real_sender.label)))
                 if msg.ent_target:
                     self.env.target_message_ctr -= 1
-
-                # this part is used to stop the simulator at a time when all sent packets got delivered!
-                if self.env.finished and self.env.target_message_ctr <= 0:
-                    print("Entering")
-                    print('> The stop simulation condition happened.')
-                    self.env.stop_sim_event.succeed()
+                    # this part is used to stop the simulator at a time when all sent target packets got delivered!
+                    if self.env.finished and self.env.target_message_ctr <= 0:
+                        print("Entering")
+                        print('> The stop simulation condition happened.')
+                        self.env.stop_sim_event.succeed()
 
         elif packet.type == "DUMMY":
             pass
@@ -322,6 +321,7 @@ class Node(object):
                     pkt.time_queued = current_time
                     if self.target:
                         pkt.probability_mass[i] = 1.0
+                    pkt.sender_estimates = np.array([0.0, 0.0, 0.0])
                     pkt.sender_estimates[self.label] = 1.0
                     i += 1
                 self.add_to_buffer(msg.pkts)
@@ -329,12 +329,13 @@ class Node(object):
                 m += 1
 
                 print(
-                    "[{}/{}] New message added to buffer at tick {} ({}) by {}. Recipient {}. Message Size: {} bytes (= {} packets)".format(
+                    "[{}/{}] New (target) message added to buffer at tick {} ({}) by {}. Recipient {}. Message Size: {} bytes (= {} packets)".format(
                         m, self.conf["misc"]["num_target_messages"], self.env.now,
                         datetime.datetime.now().strftime("%H:%M:%S"), self.id, dest, msg.byte_size / 2, len(msg.pkts)))
 
             print("All target messages have been added to the buffer. Waiting to receive them all.")
             self.env.finished = True
+            print("> Marked finish")
 
         else:
             while m < self.conf["misc"]["num_target_messages"]:
@@ -345,6 +346,7 @@ class Node(object):
                 msg.time_queued = current_time  # The time when the message was created and placed into the queue
                 for pkt in msg.pkts:
                     pkt.time_queued = current_time
+                    pkt.sender_estimates = np.array([0.0, 0.0, 0.0])
                     pkt.sender_estimates[self.label] = 1.0
                     i += 1
                 self.add_to_buffer(msg.pkts)
@@ -354,8 +356,6 @@ class Node(object):
                     "[{}/{}] New message added to buffer at tick {} ({}) by {}. Recipient {}. Message Size: {} bytes (= {} packets)".format(
                         m, self.conf["misc"]["num_target_messages"], self.env.now,
                         datetime.datetime.now().strftime("%H:%M:%S"), self.id, dest, msg.byte_size / 2, len(msg.pkts)))
-
-            print("All target messages have been added to the buffer. Waiting to receive them all.")
 
 
 

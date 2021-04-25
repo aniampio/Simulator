@@ -4,6 +4,7 @@ import datetime
 import time
 import numpy as np
 from collections import namedtuple
+import random
 
 
 import experiments.Settings
@@ -30,7 +31,8 @@ def get_loggers(log_dir, conf):
     return (packet_logger, message_logger, entropy_logger)
 
 
-def setup_env(conf):
+def setup_env(conf, rseed=None):
+    random.seed(rseed)
     env = simpy.Environment()
     env.stop_sim_event = env.event()
     env.stop_cool_down_event = env.event()
@@ -91,7 +93,7 @@ def run_p2p(env, conf, net, loggers):
     time_started_unix = datetime.datetime.now()
     # ------ RUNNING THE STARTUP PHASE ----------
     if conf["phases"]["burnin"] > 0.0:
-        env.run(until=conf["phases"]["burnin"])
+        env.run(until=env.now + conf["phases"]["burnin"])
     print("> Finished the preparation")
 
     # Start logging since system in steady state
@@ -105,6 +107,9 @@ def run_p2p(env, conf, net, loggers):
     print("> Started sending traffic for measurements")
 
     env.run(until=env.stop_sim_event)  # Run until the stop_sim_event is triggered.
+    # terminate both of the target senders so that they do not send more
+    SenderT1.terminate()
+    SenderT2.terminate()
     print("> Main part of simulation finished. Starting cooldown phase.")
 
 
@@ -198,11 +203,11 @@ def run_client_server(env, conf, net, loggers):
         p.mixlogging = True
 
     if chbit == 0:
-        env.process(SenderT1.simulate_real_traffic(recipient))
         env.process(SenderT2.simulate_real_traffic(random.choice(clients)))
+        env.process(SenderT1.simulate_real_traffic(recipient))
     else:
-        env.process(SenderT1.simulate_real_traffic(random.choice(clients)))
         env.process(SenderT2.simulate_real_traffic(recipient))
+        env.process(SenderT1.simulate_real_traffic(random.choice(clients)))
 
     real_time_started_measurements = round(time.time())
     tick_time_started_measurements = env.now
@@ -247,8 +252,8 @@ def run_client_server(env, conf, net, loggers):
     print("Network throughput %f / second: " % throughput)
     print("Average mix throughput %f / second, with std: %f" % (np.mean(mixthroughputs), np.std(mixthroughputs)))
 
-    print(">> SenderT1: ", SenderT1.nsent)
-    print(">> SenderT2: ", SenderT2.nsent)
+    print(">> SenderT1 sent %d real packets" % SenderT1.nsent)
+    print(">> SenderT2 sent %d real packets" % SenderT2.nsent)
 
 
 def check_progress(env, max_tick):
@@ -267,7 +272,7 @@ def flush_logs(loggers):
             h.flush()
 
 
-def run(exp_dir, conf_file=None, conf_dic=None):
+def run(exp_dir, conf_file=None, conf_dic=None, rseed=None):
     print("The experiment log directory is: %s" %exp_dir)
 
     # Upload config file
@@ -287,7 +292,7 @@ def run(exp_dir, conf_file=None, conf_dic=None):
     log_dir = os.path.join(exp_dir,conf["logging"]["dir"])
     experiments.Settings.saveconfig(conf, exp_dir)
     # Setup environment
-    env = setup_env(conf)
+    env = setup_env(conf, rseed)
 
     # Create the network
     type = conf["network"]["topology"]

@@ -10,8 +10,7 @@ import pickle
 from datetime import datetime
 import argparse
 
-def run(edir=None):
-
+def runSimulation(edir=None, rseed=None):
     if edir:
         experiment_dir = edir
     else:
@@ -33,7 +32,7 @@ def run(edir=None):
         except:
             pass
 
-    test_mode.run(exp_dir=experiment_dir, conf_file=None, conf_dic=config)
+    test_mode.run(exp_dir=experiment_dir, conf_file=None, conf_dic=config, rseed=rseed)
     pps = test_mode.throughput
 
     packetLogsDir = os.path.join(experiment_dir, 'logs/packet_log.csv')
@@ -121,7 +120,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-edir", help="The directory of the experiment output")
     args = parser.parse_args()
-    run(args.edir)
+    runSimulation(args.edir)
 
 # except Exception as e:
 # print(e)

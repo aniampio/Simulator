@@ -36,7 +36,7 @@ class Packet():
         self.time_delivered = None
 
         # Measurements
-        self.sender_estimates = numpy.array([0.0, 0.0, 0.0]) # Other, A, B
+        self.sender_estimates = numpy.array([1.0, 0.0, 0.0]) # Other, A, B
         # self.sender_estimates[self.real_sender.label] = 1.0
         self.probability_mass = numpy.zeros(get_total_num_of_target_packets(conf))
 
