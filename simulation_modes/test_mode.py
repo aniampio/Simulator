@@ -34,6 +34,7 @@ def get_loggers(log_dir, conf):
 def setup_env(conf, rseed=None):
     if rseed != None:
         random.seed(rseed)
+        np.random.seed(rseed)
     env = simpy.Environment()
     env.stop_sim_event = env.event()
     env.stop_cool_down_event = env.event()

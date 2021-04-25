@@ -6,6 +6,7 @@ from classes.Packet import Packet
 from classes.Message import Message
 import random
 
+
 class Node(object):
 
     def __init__(self, env, conf, net=None, label=0, loggers=None, id=None, target=False):
@@ -83,7 +84,7 @@ class Node(object):
 
                 # Send dummy packet when the packet buffer is empty (currently we don't send dummies during the cooldown phase)
                 else:
-                    tmp_pkt = Packet.dummy(conf=self.conf, net=self.net, dest=self, sender=self)  
+                    tmp_pkt = Packet.dummy(conf=self.conf, net=self.net, dest=self, sender=self)
                     # tmp_pkt.time_queued = self.env.now
                     self.env.total_messages_sent += 1
                     self.send_packet(tmp_pkt)
