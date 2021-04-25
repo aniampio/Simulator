@@ -30,7 +30,7 @@ if __name__ == "__main__":
     if nprocesses < reps:
         raise Exception('More reps than processes. Carefull, this might end up not well.')
 
-    pool = mp.Pool(processes=nprocesses)
+    # pool = mp.Pool(processes=nprocesses)
 
     dirs = []
     for i in range(0, reps):
@@ -42,9 +42,9 @@ if __name__ == "__main__":
     seeds = [(int(currentTimestamp) + x) for x in repsSalt]
     print(">> Seeds for the RNG: ", seeds)
 
-with Pool(nprocesses) as pool:
-    pool.starmap(runSim, zip(dirs, seeds))
-    time.sleep(5)
+    with mp.Pool(nprocesses) as pool:
+        pool.starmap(runSim, zip(dirs, seeds))
+        time.sleep(5)
 
-pool.close()
-pool.join()
+    pool.close()
+    pool.join()
