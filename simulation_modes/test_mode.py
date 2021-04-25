@@ -32,7 +32,8 @@ def get_loggers(log_dir, conf):
 
 
 def setup_env(conf, rseed=None):
-    random.seed(rseed)
+    if rseed != None:
+        random.seed(rseed)
     env = simpy.Environment()
     env.stop_sim_event = env.event()
     env.stop_cool_down_event = env.event()
@@ -143,19 +144,20 @@ def run_p2p(env, conf, net, loggers):
 
 def run_client_server(env, conf, net, loggers):
     clients = net.clients
+    random.shuffle(clients)
     print("> Number of active clients: ", len(clients))
 
-    SenderT1 = clients.pop()
+    SenderT1 = clients.pop(0)
     SenderT1.label = 1
     SenderT1.verbose = True
     print("> Target Sender1: ", SenderT1.id)
 
-    SenderT2 = clients.pop()
+    SenderT2 = clients.pop(0)
     SenderT2.label = 2
     SenderT2.verbose = True
     print("> Target Sender2: ", SenderT2.id)
 
-    recipient = clients.pop()
+    recipient = clients.pop(0)
     recipient.verbose = True
     print("> Target Recipient: ", recipient.id)
 
@@ -168,6 +170,7 @@ def run_client_server(env, conf, net, loggers):
 
     chbit = bool(random.getrandbits(1))
     print(">> Challenge bit: ", int(chbit))
+
     if chbit == 0:
         SenderT1.target = True
         env.process(SenderT1.start(dest=recipient))
@@ -195,7 +198,7 @@ def run_client_server(env, conf, net, loggers):
     time_started_unix = datetime.datetime.now()
     # ------ RUNNING THE STARTUP PHASE ----------
     if conf["phases"]["burnin"] > 0.0:
-        env.run(until=conf["phases"]["burnin"])
+        env.run(until=time_started + conf["phases"]["burnin"])
     print("> Finished the preparation")
 
     # Start logging since system in steady state
@@ -206,8 +209,8 @@ def run_client_server(env, conf, net, loggers):
         env.process(SenderT2.simulate_real_traffic(random.choice(clients)))
         env.process(SenderT1.simulate_real_traffic(recipient))
     else:
-        env.process(SenderT2.simulate_real_traffic(recipient))
         env.process(SenderT1.simulate_real_traffic(random.choice(clients)))
+        env.process(SenderT2.simulate_real_traffic(recipient))
 
     real_time_started_measurements = round(time.time())
     tick_time_started_measurements = env.now
@@ -292,7 +295,7 @@ def run(exp_dir, conf_file=None, conf_dic=None, rseed=None):
     log_dir = os.path.join(exp_dir,conf["logging"]["dir"])
     experiments.Settings.saveconfig(conf, exp_dir)
     # Setup environment
-    env = setup_env(conf, rseed)
+    env = setup_env(conf=conf, rseed=rseed)
 
     # Create the network
     type = conf["network"]["topology"]

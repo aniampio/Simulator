@@ -23,7 +23,7 @@ def getUnlinkability(data):
 	realSenderLabel = data["RealSenderLabel"]
 	for i, (prA, prB, prO) in enumerate(zip(est_senderA, est_senderB, est_others)):
 		suma = float(prA) + float(prB) + float(prO)
-		if not math.isclose(suma, 1.0, rel_tol=1e-15):
+		if not math.isclose(suma, 1.0, rel_tol=1e-10):
 			print(">>> The probabilities do not sum up to one! Row: %d Sum: %f" % (i, prA + prB + prO))
 
 	for (prA, prB, label) in zip(est_senderA, est_senderB, realSenderLabel):

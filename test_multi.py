@@ -7,7 +7,7 @@ from shutil import rmtree
 
 
 def runSim(edir, rseed):
-    pg.runSimulation(edir, rseed)
+    pg.runSimulation(edir=edir, rseed=rseed)
 
 
 if __name__ == "__main__":
@@ -38,7 +38,10 @@ if __name__ == "__main__":
 
     currentTimestamp = datetime.now().timestamp()
     repsSalt = range(reps)
-    seeds = [currentTimestamp + x for x in repsSalt]
+    seeds = [(int(currentTimestamp) + x) for x in repsSalt]
     print(">> Seeds for the RNG: ", seeds)
 
     pool.starmap(runSim, zip(dirs, seeds))
+
+    pool.close()
+    pool.join()

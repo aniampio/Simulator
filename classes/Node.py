@@ -71,8 +71,6 @@ class Node(object):
             if self.alive:
                 if delays == []:
                     delays = list(np.random.exponential(self.packet_stream_average_delay, 10000))
-                if dummies == []:
-                    dummies = [Packet.dummy(conf=self.conf, net=self.net, dest=self, sender=self) for x in range(10000)]
 
                 delay = delays.pop()
                 yield self.env.timeout(float(delay))
@@ -85,9 +83,8 @@ class Node(object):
 
                 # Send dummy packet when the packet buffer is empty (currently we don't send dummies during the cooldown phase)
                 else:
-                    # tmp_pkt = Packet.dummy(conf=self.conf, net=self.net, dest=self, sender=self)  # sender_estimates[sender.label] = 1.0
+                    tmp_pkt = Packet.dummy(conf=self.conf, net=self.net, dest=self, sender=self)  
                     # tmp_pkt.time_queued = self.env.now
-                    tmp_pkt = dummies.pop(0)
                     self.env.total_messages_sent += 1
                     self.send_packet(tmp_pkt)
             else:
@@ -110,9 +107,9 @@ class Node(object):
                     yield self.env.timeout(float(delay))
 
                     cover_loop_packet = Packet.dummy(conf=self.conf, net = self.net, dest=self, sender=self)
-                    cover_loop_packet.time_queued = self.env.now
-                    self.send_packet(cover_loop_packet)
+                    # cover_loop_packet.time_queued = self.env.now
                     self.env.total_messages_sent += 1
+                    self.send_packet(cover_loop_packet)
                 else:
                     break
         else:
@@ -217,7 +214,6 @@ class Node(object):
                     self.env.target_message_ctr -= 1
                     # this part is used to stop the simulator at a time when all sent target packets got delivered!
                     if self.env.finished and self.env.target_message_ctr <= 0:
-                        print("Entering")
                         print('> The stop simulation condition happened.')
                         self.env.stop_sim_event.succeed()
 
@@ -302,14 +298,14 @@ class Node(object):
             Keyword arguments:
             dest - the destination of the message.
         '''
-        i = 0
-        m = 0
         total_num_target_packets = get_total_num_of_target_packets(self.conf)
         print("> Simulating real traffic for {} messages of {} bytes split into {} packets of {} bytes.".format(
             self.conf["misc"]["num_target_messages"], self.conf["message"]["exact_msg_size"],
             total_num_target_packets, self.conf["packet"]["packet_size"]))
 
         if self.target:
+            i = 0
+            m = 0
             while m < self.conf["misc"]["num_target_messages"]:
                 yield self.env.timeout(float(self.traffic_gen_average_delay))
 
@@ -319,8 +315,7 @@ class Node(object):
                 msg.time_queued = current_time  # The time when the message was created and placed into the queue
                 for pkt in msg.pkts:
                     pkt.time_queued = current_time
-                    if self.target:
-                        pkt.probability_mass[i] = 1.0
+                    pkt.probability_mass[i] = 1.0 # for entropy
                     pkt.sender_estimates = np.array([0.0, 0.0, 0.0])
                     pkt.sender_estimates[self.label] = 1.0
                     i += 1
@@ -335,9 +330,10 @@ class Node(object):
 
             print("All target messages have been added to the buffer. Waiting to receive them all.")
             self.env.finished = True
-            print("> Marked finish")
 
         else:
+            i = 0
+            m = 0
             while m < self.conf["misc"]["num_target_messages"]:
                 yield self.env.timeout(float(self.traffic_gen_average_delay))
 
