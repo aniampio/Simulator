@@ -274,6 +274,7 @@ def flush_logs(loggers):
     for l in loggers:
         for h in l.handlers:
             h.flush()
+            h.close()
 
 
 def run(exp_dir, conf_file=None, conf_dic=None, rseed=None):
