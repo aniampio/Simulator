@@ -15,12 +15,15 @@ if __name__ == "__main__":
 
     try:
         # Kill previously running ones in case left somewhere
-        os.system('pkill -9 -f test_multip.py')
-        os.system('pkill -9 -f playground.py')
+        os.system("pkill -9 -f test_multip.py")
+        os.system("pkill -9 -f playground.py")
+
         # Remove the existing directories
+        path = os.getcwd()
         del_paths = glob.glob(os.path.join(path, 'expdir_*'))
         for p in del_paths:
-            shutil.rmtree(p)
+            print(">> Removing path: ", p)
+            rmtree(p)
     except:
         pass
 
