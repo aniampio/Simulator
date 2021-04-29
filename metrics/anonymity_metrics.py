@@ -33,8 +33,6 @@ def getUnlinkability(data):
 				if not ratio == 0.0:
 					lratio = math.log(ratio)
 					epsilon.append(lratio)
-				else:
-					dlts += 1
 			else:
 				dlts += 1
 		elif label == 2:
@@ -43,14 +41,12 @@ def getUnlinkability(data):
 				if not ratio == 0.0:
 					lratio = math.log(ratio)
 					epsilon.append(lratio)
-				else:
-					dlts += 1
 			else:
 				dlts += 1
 		else:
 			pass
 
-	meanEps = np.abs(np.mean(epsilon)) if epsilon != [] else None
+	meanEps = np.mean(epsilon) if epsilon != [] else None
 	stdEps = np.std(epsilon) if epsilon != [] else None
 	delta = float(dlts) / float(len(est_senderA))
 

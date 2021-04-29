@@ -265,6 +265,7 @@ class Node(object):
             Keyword arguments:
             packet - the packet for which we update the probabilities vector
         '''
+        print("Before update sender estimates: ", (self.id, self.sender_estimates, packet.sender_estimates, len(self.pool)))
         self.inter_pkts += 1
         if self.probability_mass is None and self.sender_estimates is None:
             self.pool[packet.id] = packet
@@ -281,6 +282,8 @@ class Node(object):
 
             self.probability_mass = dist_pm.copy()
             self.sender_estimates = dist_se.copy()
+
+        print("After update sender estimates: ", (self.id, self.sender_estimates, packet.sender_estimates, len(self.pool)))
 
 
     def set_start_logs(self, time=0.0):
