@@ -51,19 +51,20 @@ def setup_env(conf, rseed=None):
 def run_p2p(env, conf, net, loggers):
     print("Running P2P topology")
     peers = net.peers
+    random.shuffle(peers)
     print("Number of active peers: ", len(peers))
 
-    SenderT1 = peers.pop()
+    SenderT1 = peers.pop(0)
     SenderT1.label = 1
     SenderT1.verbose = True
     print("Target Sender1: ", SenderT1.id)
 
-    SenderT2 = peers.pop()
+    SenderT2 = peers.pop(0)
     SenderT2.label = 2
     SenderT2.verbose = True
     print("Target Sender2: ", SenderT2.id)
 
-    recipient = peers.pop()
+    recipient = peers.pop(0)
     print("Target Recipient: ", recipient.id)
 
     for c in peers:
@@ -73,10 +74,13 @@ def run_p2p(env, conf, net, loggers):
 
     chbit = bool(random.getrandbits(1))
     print(">> Challenge bit: ", int(chbit))
-    if chbit:
+
+    if chbit == 0:
+        SenderT1.target = True
         env.process(SenderT1.start(dest=recipient))
         env.process(SenderT2.start(dest=random.choice(peers)))
     else:
+        SenderT2.target = True
         env.process(SenderT1.start(dest=random.choice(peers)))
         env.process(SenderT2.start(dest=recipient))
 
@@ -95,24 +99,36 @@ def run_p2p(env, conf, net, loggers):
     time_started_unix = datetime.datetime.now()
     # ------ RUNNING THE STARTUP PHASE ----------
     if conf["phases"]["burnin"] > 0.0:
-        env.run(until=env.now + conf["phases"]["burnin"])
+        env.run(until=time_started + conf["phases"]["burnin"])
     print("> Finished the preparation")
 
     # Start logging since system in steady state
     for p in net.peers:
         p.mixlogging = True
 
-    if chbit:
+    if chbit == 0:
         env.process(SenderT1.simulate_real_traffic(recipient))
+        env.process(SenderT2.simulate_real_traffic(random.choice(peers)))
     else:
+        env.process(SenderT1.simulate_real_traffic(random.choice(peers)))
         env.process(SenderT2.simulate_real_traffic(recipient))
-    print("> Started sending traffic for measurements")
+
+    real_time_started_measurements = round(time.time())
+    tick_time_started_measurements = env.now
+    print("> Started sending traffic for measurements (sim tick {})".format(tick_time_started_measurements))
 
     env.run(until=env.stop_sim_event)  # Run until the stop_sim_event is triggered.
     # terminate both of the target senders so that they do not send more
-    SenderT1.terminate()
-    SenderT2.terminate()
-    print("> Main part of simulation finished. Starting cooldown phase.")
+    # SenderT1.terminate()
+    # SenderT2.terminate()
+
+    real_time_ended_measurements = round(time.time())
+    total_real_time_measurements = real_time_ended_measurements - real_time_started_measurements
+    tick_time_ended_measurements = env.now
+    total_tick_time_measurements = tick_time_ended_measurements - tick_time_started_measurements
+    print("> Total measurements time: {} minutes.".format(total_real_time_measurements/60))
+    print("> Total measurements in ticks: {}.".format(total_tick_time_measurements))
+    print("> Main part of simulation finished at tick {}. Starting cooldown phase.".format(tick_time_ended_measurements))
 
 
     # ------ RUNNING THE COOLDOWN PHASE ----------
@@ -121,25 +137,31 @@ def run_p2p(env, conf, net, loggers):
 
     # Log entropy
     loggers[2].info(StructuredMessage(metadata=tuple(env.entropy)))
-    print("> Cooldown phase finished.")
 
+    print("> Cooldown phase finished.")
     time_finished = env.now
     time_finished_unix = datetime.datetime.now()
-
+    # print("Reciever received: ", recipient.num_received_packets)
+    print("> End of Simulation at {}".format(datetime.datetime.now().strftime("%H:%M:%S")))
     print("> Total Simulation Time [in ticks]: " + str(time_finished-time_started) + "---------")
     print("> Total Simulation Time [in unix time]: " + str(time_finished_unix-time_started_unix) + "---------")
 
     flush_logs(loggers)
 
+
     global throughput
     throughput = float(env.total_messages_received) / float(time_finished-time_started)
 
     mixthroughputs = []
-    for p in net.peers:
-        mixthroughputs.append(float(p.pkts_sent) / float(time_finished-time_started))
+    for m in net.peers:
+        mixthroughputs.append(float(m.pkts_sent) / float(time_finished-time_started))
 
-    print("Network throughput: %f [packets/s]" % throughput)
-    print("Average mix throughput: %f [packets/s], with std: %f" % (np.mean(mixthroughputs), np.std(mixthroughputs)))
+    print("Total number of packets which went through the network: ", float(env.total_messages_received))
+    print("Network throughput %f / second: " % throughput)
+    print("Average mix throughput %f / second, with std: %f" % (np.mean(mixthroughputs), np.std(mixthroughputs)))
+
+    print(">> SenderT1 sent %d real packets" % SenderT1.nsent)
+    print(">> SenderT2 sent %d real packets" % SenderT2.nsent)
 
 
 

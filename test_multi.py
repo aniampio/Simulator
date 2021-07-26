@@ -27,8 +27,8 @@ if __name__ == "__main__":
     except:
         pass
 
-    nprocesses = 8
-    reps = 15
+    nprocesses = 5
+    reps = 20
 
     dirs = []
     for i in range(0, reps):

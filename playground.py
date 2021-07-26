@@ -63,8 +63,11 @@ def runSimulation(edir=None, rseed=None):
     print("-------------------------------------------------------")
     print("-------- Anonymity metrics --------")
     print(">>> Entropy: ", entropy)
-    if unlinkability[0] == None:
-        print(">>> E2E Unlinkability: epsilon= -, stdEps= -, delta=%f)" % unlinkability[1])
+    print(unlinkability)
+    if unlinkability[0] == None and unlinkability[1] == None:
+        print("The traffic was too thin to compute the unlinkability.")
+    elif unlinkability[0] == None:
+        print(">>> E2E Unlinkability: epsilon= -, stdEps= -, delta=%f)" % unlinkability[2])
     else:
         print(">>> E2E Unlinkability: (epsilon=%f, stdEps=%f, delta=%f)" % unlinkability)
 
