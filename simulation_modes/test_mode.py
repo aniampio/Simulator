@@ -77,10 +77,12 @@ def run_p2p(env, conf, net, loggers):
 
     if chbit == 0:
         SenderT1.target = True
+        SenderT2.target = True
         env.process(SenderT1.start(dest=recipient))
         env.process(SenderT2.start(dest=random.choice(peers)))
     else:
         SenderT2.target = True
+        SenderT1.target = True
         env.process(SenderT1.start(dest=random.choice(peers)))
         env.process(SenderT2.start(dest=recipient))
 
@@ -196,10 +198,12 @@ def run_client_server(env, conf, net, loggers):
 
     if chbit == 0:
         SenderT1.target = True
+        SenderT2.target = True
         env.process(SenderT1.start(dest=recipient))
         env.process(SenderT2.start(dest=random.choice(clients)))
     else:
         SenderT2.target = True
+        SenderT1.target = True
         env.process(SenderT1.start(dest=random.choice(clients)))
         env.process(SenderT2.start(dest=recipient))
 

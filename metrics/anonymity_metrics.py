@@ -26,8 +26,9 @@ def getUnlinkability(data):
 		if not math.isclose(suma, 1.0, rel_tol=1e-10):
 			print(">>> The probabilities do not sum up to one! Row: %d Sum: %f" % (i, prA + prB + prO))
 
+	adv_was_wrong = 0
 	for (prA, prB, label) in zip(est_senderA, est_senderB, realSenderLabel):
-		# print("PrA %f, PrB %f" % (prA, prB))
+		print("PrA %f, PrB %f, label %d" % (prA, prB, label))
 		if label == 1:
 			if not float(prB) == 0.0:
 				ratio = float(prA) / float(prB)
@@ -35,6 +36,8 @@ def getUnlinkability(data):
 					lratio = math.log(ratio)
 					# print("Lratio %f, Ratio: %f " % (lratio, ratio))
 					epsilon.append(lratio)
+				else:
+					adv_was_wrong += 1
 			else:
 				dlts += 1
 		elif label == 2:
@@ -44,6 +47,8 @@ def getUnlinkability(data):
 					lratio = math.log(ratio)
 					# print("Lratio %f, Ratio: %f " % (lratio, ratio))
 					epsilon.append(lratio)
+				else:
+					adv_was_wrong += 1
 			else:
 				dlts += 1
 		else:
@@ -52,5 +57,6 @@ def getUnlinkability(data):
 	meanEps = np.mean(epsilon) if epsilon != [] else None
 	stdEps = np.std(epsilon) if epsilon != [] else None
 	delta = float(dlts) / float(len(est_senderA))
+	fp = float(adv_was_wrong) / float(len(est_senderA))
 
 	return (meanEps, stdEps, delta)
