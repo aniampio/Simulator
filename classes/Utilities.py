@@ -1,16 +1,16 @@
-import string
 from binascii import hexlify
 from os import urandom
 import logging
 import logging.handlers
 from experiments.Settings import *
 import json
-import numpy 
+import numpy
+from string import ascii_letters
+import random
 
 
 def random_string(size):
-    return hexlify(urandom(size)).decode('utf8')
-    # return ''.join(random.choice(chars) for x in range(size))
+    return ''.join(random.choice(ascii_letters) for _ in range(size))
 
 def get_exponential_delay(avg_delay, cache=[]):
     if cache == []:
